@@ -493,6 +493,7 @@
   async function deleteDesign(id) { if (!await showConfirm("Delete", "Sure?")) return; await supabaseClient.from('designs').delete().eq('id', id); if (currentDesignId === id) currentDesignId = null; loadAllData(); }
   async function saveSettingsAdmin() { await supabaseClient.from('settings').upsert([{ key: "fb", value: document.getElementById('setting-fb').value }, { key: "wa", value: document.getElementById('setting-wa').value }, { key: 'email', value: document.getElementById('setting-email').value }]); showAlert("Saved", "Links updated.", "✅"); loadSettings(); }
 
+  // --- MAIN GENERATION LOGIC WITH SMART WAIT ---
   async function generateImage(cardId) {
     const design = allDesigns.find(d => d.id === cardId);
     const text = document.getElementById(`input-${cardId}`).value.trim();
@@ -501,12 +502,11 @@
     const btn = document.getElementById(`btn-${cardId}`);
     btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Generating...';
     
-    // SHOW PHOTOPEA IN FOREGROUND
     showPhotopea();
     globalLoaderText.innerText = "Warming Up...";
 
     clearTimeout(generationTimeout);
-    generationTimeout = setTimeout(() => { hidePhotopea(); showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 120000); // 2 mins timeout
+    generationTimeout = setTimeout(() => { hidePhotopea(); showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 150000); // 2.5 mins timeout
 
     const processPSD = async () => {
         try {
@@ -517,11 +517,24 @@
           globalLoaderText.innerText = "Processing...";
           frame.contentWindow.postMessage(arrayBuffer, "*");
           
-          setTimeout(() => {
-            const script = `
+          // Send a Smart Polling Script to Photopea
+          const script = `
+            var maxWait = 120; // 120 seconds max wait
+            var wait = 0;
+            function doWork() {
+              wait++;
+              if (wait > maxWait) {
+                app.echoToOE("ERROR: PSD file took too long to load.");
+                return;
+              }
+              // Check if document is fully loaded
+              if (!app.documents || app.documents.length === 0 || !app.activeDocument || !app.activeDocument.layers || app.activeDocument.layers.length === 0) {
+                setTimeout(doWork, 1000); // Wait 1s and check again
+                return;
+              }
+              
               try {
                 var doc = app.activeDocument;
-                if(!doc) throw new Error("No doc loaded");
                 var newText = "${text.replace(/"/g, '\\"')}";
                 var found = false;
                 function findLayer(layers) {
@@ -537,9 +550,11 @@
                 if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
                 else doc.saveToOE("png");
               } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            `;
-            frame.contentWindow.postMessage(script, "*");
-          }, 4000);
+            }
+            doWork();
+          `;
+          frame.contentWindow.postMessage(script, "*");
+          
         } catch (err) {
           hidePhotopea();
           showAlert("Error", "File fetch error: " + err.message, "❌");
@@ -584,8 +599,15 @@
           const arrayBuffer = await response.arrayBuffer();
           frame.contentWindow.postMessage(arrayBuffer, "*");
           
-          setTimeout(() => {
-            const script = `
+          const script = `
+            var maxWait = 120;
+            var wait = 0;
+            function doWork() {
+              wait++;
+              if (wait > maxWait) { app.echoToOE("ERROR: PSD load timeout."); return; }
+              if (!app.documents || app.documents.length === 0 || !app.activeDocument || !app.activeDocument.layers || app.activeDocument.layers.length === 0) {
+                setTimeout(doWork, 1000); return;
+              }
               try {
                 var doc = app.activeDocument;
                 var newText = "${text.replace(/"/g, '\\"')}";
@@ -603,9 +625,10 @@
                 if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
                 else doc.saveToOE("png");
               } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            `;
-            frame.contentWindow.postMessage(script, "*");
-          }, 4000);
+            }
+            doWork();
+          `;
+          frame.contentWindow.postMessage(script, "*");
         } catch (err) { hidePhotopea(); showAlert("Error", "Fetch error: " + err.message, "❌"); isBulkGenerating = false; }
     };
     if (isPhotopeaReady) processPSD(); else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
