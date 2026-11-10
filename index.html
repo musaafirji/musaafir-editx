@@ -52,30 +52,34 @@
     --btn-border: rgba(0,0,0,0.1);
     --btn-hover: rgba(0,0,0,0.1);
     --tab-bg: #ffffff;
-    --cat-bg: rgba(255, 255, 255, 0.8);
+    --cat-bg: rgba(0,0,0,0.03);
     --cat-color: #6b7280;
     --cat-hover-bg: rgba(0,0,0,0.05);
   }
 
   *{box-sizing:border-box; font-family: 'Poppins', sans-serif;}
-  
+
   html, body {
-    margin: 0; padding: 0; background-color: var(--bg-color); min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    min-height: 100vh;
     overflow-x: hidden;
   }
 
-  /* Photopea Iframe (Default: hidden in background) */
+  /* Photopea Iframe */
   #photopea-frame {
     position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    z-index: -1; 
-    opacity: 0.01; /* Thoda visible taake browser block na kare */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    opacity: 0.01;
     border: none;
-    pointer-events: none; 
+    pointer-events: none;
   }
 
-  /* Jab generate ho raha ho, iframe ko upar le aao */
   #photopea-frame.active-generation {
     z-index: 99998;
     opacity: 1;
@@ -87,7 +91,7 @@
     position: relative;
     z-index: 10;
     background-color: var(--bg-color);
-    background-image: var(--bg-image); 
+    background-image: var(--bg-image);
     background-attachment: fixed;
     min-height: 100vh;
     width: 100%;
@@ -96,7 +100,7 @@
     overflow-x: hidden;
   }
 
-  /* GLOBAL FULL SCREEN LOADER */
+  /* Global Loader */
   #global-loader {
     display: none;
     position: fixed;
@@ -112,77 +116,419 @@
     font-weight: 600;
     text-align: center;
   }
+
   #global-loader.active {
     display: flex;
   }
 
-  header{padding:15px 20px; background:var(--header-bg); backdrop-filter: blur(15px); border-bottom:1px solid var(--header-border); display:flex;justify-content:center;align-items:center; position:sticky;top:0;z-index:1000;}
-  .header-content { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-  
-  .logo-text { 
-    font-family: 'Cookie', cursive; font-weight: 400; font-size: 42px; letter-spacing: 0; padding-bottom: 5px;
-    background: linear-gradient(270deg, #ff8a00, #e52e71, #8b5cf6, #3b82f6, #ff8a00); background-size: 300% 300%;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradient-shift 4s ease infinite; filter: drop-shadow(0px 0px 15px rgba(139, 92, 246, 0.4)); 
+  header {
+    padding: 15px 20px;
+    background: var(--header-bg);
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid var(--header-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
   }
-  .tagline { font-size: 10px; color: var(--text-muted); letter-spacing: 3px; text-transform: uppercase; margin-top: -5px; font-weight: 500; }
-  @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-  .header-icons { position: absolute; right: 20px; display: flex; align-items: center; gap: 15px; }
-  .icon-btn { font-size: 24px; cursor: pointer; color: var(--text-main); transition: 0.2s; user-select: none; }
-  .icon-btn:hover { color: #8b5cf6; transform: scale(1.1); }
+  .header-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
 
-  .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 999; animation: fadeIn 0.3s ease; }
+  .logo-text {
+    font-family: 'Cookie', cursive;
+    font-weight: 400;
+    font-size: 42px;
+    letter-spacing: 0;
+    padding-bottom: 5px;
+    background: linear-gradient(270deg, #ff8a00, #e52e71, #8b5cf6, #3b82f6, #ff8a00);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-shift 4s ease infinite;
+    filter: drop-shadow(0px 0px 15px rgba(139, 92, 246, 0.4));
+  }
+
+  .tagline {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: -5px;
+    font-weight: 500;
+  }
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .header-icons {
+    position: absolute;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .icon-btn {
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: 0.2s;
+    user-select: none;
+  }
+
+  .icon-btn:hover {
+    color: #8b5cf6;
+    transform: scale(1.1);
+  }
+
+  .menu-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    z-index: 999;
+    animation: fadeIn 0.3s ease;
+  }
+
   .menu-overlay.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  .dropdown-menu { display: none; position: absolute; top: 75px; right: 20px; background: var(--dropdown-bg); backdrop-filter: blur(15px); border: 1px solid var(--dropdown-border); border-radius: 12px; padding: 8px; min-width: 220px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); z-index: 1001; flex-direction: column; gap: 2px; animation: slideDown 0.2s ease forwards; }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 75px;
+    right: 20px;
+    background: var(--dropdown-bg);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--dropdown-border);
+    border-radius: 12px;
+    padding: 8px;
+    min-width: 220px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    z-index: 1001;
+    flex-direction: column;
+    gap: 2px;
+    animation: slideDown 0.2s ease forwards;
+  }
+
   .dropdown-menu.active { display: flex; }
-  .menu-item { padding: 12px 15px; cursor: pointer; border-radius: 8px; color: var(--text-main); font-size: 14px; font-weight: 500; transition: all 0.2s; user-select: none; }
-  .menu-item:hover { background: var(--dropdown-hover); color: #3b82f6; }
 
-  .btn{padding:8px 12px; border-radius:6px; border:1px solid var(--btn-border);background:var(--btn-bg); color:var(--text-main); cursor:pointer; font-size:13px;font-weight:500; transition:all 0.2s ease;}
-  .btn:hover { background:var(--btn-hover); transform: translateY(-1px); }
-  .btn.primary{background: linear-gradient(135deg, #3b82f6, #8b5cf6);border:none; color:#fff; font-weight:600;box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;}
-  .btn.primary:hover{background: linear-gradient(135deg, #2563eb, #7c3aed);}
-  .btn.primary:disabled { opacity: 0.8; cursor: not-allowed; transform: none; }
-  .btn.danger{ background:rgba(185, 28, 28, 0.8); border-color:#b91c1c; color: #fff;}
-  .btn.action-btn{ padding: 6px 10px; font-size: 12px; }
-  .btn-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .menu-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    user-select: none;
+  }
 
-  #user-view{padding-bottom:50px;}
-  #category-bar { display: flex; overflow-x: auto; gap: 12px; padding: 25px 20px; max-width: 1200px; margin: 0 auto; -ms-overflow-style: none; scrollbar-width: none; }
+  .menu-item:hover {
+    background: var(--dropdown-hover);
+    color: #3b82f6;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--btn-border);
+    background: var(--btn-bg);
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .btn:hover {
+    background: var(--btn-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn.primary {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn.primary:hover {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+  }
+
+  .btn.primary:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn.danger {
+    background: rgba(185, 28, 28, 0.8);
+    border-color: #b91c1c;
+    color: #fff;
+  }
+
+  .btn.action-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  #user-view { padding-bottom: 50px; }
+
+  #category-bar {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 25px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   #category-bar::-webkit-scrollbar { display: none; }
-  .cat-tab { padding: 10px 22px; border: 1px solid var(--btn-border); border-radius: 30px; background: var(--cat-bg); backdrop-filter: blur(10px); color: var(--cat-color); white-space: nowrap; cursor: pointer; font-size: 14px; font-weight: 500; }
-  .cat-tab.active { background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(139, 92, 246, 0.9)); border-color: rgba(139, 92, 246, 0.6); color: #fff; font-weight: 600; }
 
-  #design-grid {display: grid; grid-template-columns: 1fr; gap: 25px; padding: 20px; max-width: 1200px; margin: 0 auto;}
-  @media (min-width: 768px) {#design-grid { grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }}
-  
-  .design-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-  .design-card .img-container { position: relative; cursor: pointer; background: #000; overflow: hidden; }
-  .design-card img { width: 100%; display: block; object-fit: contain; transition: opacity 0.3s, filter 0.3s; }
-  
-  .action-area { display: none; padding: 20px; background: var(--action-bg); border-top: 2px solid #3b82f6; margin-top: auto; }
-  .design-card.active { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); }
+  .cat-tab {
+    padding: 10px 22px;
+    border: 1px solid var(--btn-border);
+    border-radius: 30px;
+    background: var(--cat-bg);
+    backdrop-filter: blur(10px);
+    color: var(--cat-color);
+    white-space: nowrap;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .cat-tab.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(139, 92, 246, 0.9));
+    border-color: rgba(139, 92, 246, 0.6);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  #design-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) {
+    #design-grid {
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+  }
+
+  .design-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  }
+
+  .design-card .img-container {
+    position: relative;
+    cursor: pointer;
+    background: #000;
+    overflow: hidden;
+  }
+
+  .design-card img {
+    width: 100%;
+    display: block;
+    object-fit: contain;
+    transition: opacity 0.3s, filter 0.3s;
+  }
+
+  .action-area {
+    display: none;
+    padding: 20px;
+    background: var(--action-bg);
+    border-top: 2px solid #3b82f6;
+    margin-top: auto;
+  }
+
+  .design-card.active {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+
   .design-card.active .action-area { display: block; }
-  .action-area input { width: 100%; padding: 14px 16px; font-size: 16px; border-radius: 10px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-main); margin-bottom: 12px; outline: none; }
 
-  .loader-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 12, 16, 0.6); backdrop-filter: blur(10px); align-items: center; justify-content: center; flex-direction: column; color: #8b5cf6; font-size: 16px; font-weight: 600; z-index: 10; }
-  .spinner { width: 30px; height: 30px; border: 3px solid rgba(139, 92, 246, 0.3); border-top-color: #8b5cf6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+  .action-area input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text-main);
+    margin-bottom: 12px;
+    outline: none;
+  }
+
+  .loader-overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 12, 16, 0.6);
+    backdrop-filter: blur(10px);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #8b5cf6;
+    font-size: 16px;
+    font-weight: 600;
+    z-index: 10;
+  }
+
+  .spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(139, 92, 246, 0.3);
+    border-top-color: #8b5cf6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+  }
+
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  #contact-page, #about-page { display: none; padding: 30px 20px; max-width: 900px; margin: 0 auto; }
-  .page-header { display: flex; align-items: center; margin-bottom: 30px; gap: 15px; }
-  .back-btn { background: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--text-main); padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; }
-  .contact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-  .contact-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none; color: var(--text-main); }
-  .contact-card svg { width: 45px; height: 45px; margin-bottom: 15px; }
-  .contact-card h3 { margin: 0 0 5px 0; font-size: 18px; }
-  .contact-card p { margin: 0; color: var(--text-muted); font-size: 13px; }
-  .about-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 30px; margin-bottom: 25px; }
-  .about-heading { margin-top: 0; font-size: 20px; text-align: center; border-bottom: 1px solid var(--card-border); padding-bottom: 15px; position: relative; }
-  .about-heading span { font-family: 'Audiowide', sans-serif; background: linear-gradient(270deg, #e52e71, #8b5cf6, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .about-heading::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #e52e71, #8b5cf6, #3b82f6); }
+  #contact-page, #about-page {
+    display: none;
+    padding: 30px 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    gap: 15px;
+  }
+
+  .back-btn {
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    color: var(--text-main);
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .contact-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text-main);
+  }
+
+  .contact-card svg {
+    width: 45px;
+    height: 45px;
+    margin-bottom: 15px;
+  }
+
+  .contact-card h3 {
+    margin: 0 0 5px 0;
+    font-size: 18px;
+  }
+
+  .contact-card p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .about-section {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 25px;
+  }
+
+  .about-heading {
+    margin-top: 0;
+    font-size: 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--card-border);
+    padding-bottom: 15px;
+    position: relative;
+  }
+
+  .about-heading span {
+    font-family: 'Audiowide', sans-serif;
+    background: linear-gradient(270deg, #e52e71, #8b5cf6, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .about-heading::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #e52e71, #8b5cf6, #3b82f6);
+  }
   .about-section p { color: var(--text-muted); line-height: 1.8; font-size: 15px; text-align: justify; }
   .features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
   .feature-item { background: var(--bg-color); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border); }
@@ -198,7 +544,7 @@
   .form-row{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
   .form-row label{font-size:13px;color:var(--text-muted);font-weight:600;text-transform:uppercase;}
   .form-row input, .form-row select{background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-main);padding:12px;border-radius:8px;font-size:14px;outline:none;}
-  
+
   .admin-item{display:flex;align-items:center;gap:15px;padding:15px;border:1px solid var(--card-border);background:var(--tab-bg);border-radius:10px;margin-bottom:12px;flex-wrap:wrap;}
   .admin-item img{width:70px;height:70px;object-fit:cover;border-radius:8px}
   .admin-item-info{flex:1; min-width: 150px;}
@@ -226,7 +572,7 @@
 <!-- IFRAME -->
 <iframe id="photopea-frame" src="about:blank"></iframe>
 
-<!-- GLOBAL LOADER (Covers Photopea when active) -->
+<!-- GLOBAL LOADER -->
 <div id="global-loader">
   <div class="spinner" style="width: 40px; height: 40px; border-width: 4px; margin-bottom: 20px;"></div>
   <div id="global-loader-text">Warming Up...</div>
@@ -244,7 +590,7 @@
       <div class="tagline">Designed To Impress</div>
     </div>
     <div class="header-icons"><div class="icon-btn" onclick="toggleMenu()">☰</div></div>
-    
+
     <div class="dropdown-menu" id="dropdownMenu">
       <div class="menu-item" id="theme-menu-item" onclick="toggleTheme()">☀️ Switch to Light Theme</div>
       <div class="menu-item" onclick="toggleView(); toggleMenu();">⚙️ Admin Panel</div>
@@ -285,6 +631,7 @@
       <div class="tab" onclick="switchTab('settings', this)">Settings</div>
       <div class="tab" onclick="switchTab('stats', this)">Stats</div>
     </div>
+
     <div id="panel-designs" class="panel active">
       <div class="card">
         <h3 style="margin-top:0; font-weight:600;">Add New Design</h3>
@@ -296,10 +643,12 @@
       </div>
       <div class="card"><h3 style="margin-top:0; font-weight:600;">Manage Designs</h3><div id="admin-list"></div></div>
     </div>
+
     <div id="panel-categories" class="panel">
       <div class="card"><h3 style="margin-top:0; font-weight:600;">Add New Category</h3><div class="form-row"><label>Category Name</label><input type="text" id="cat-name" placeholder="e.g., Wedding, Birthday"></div><button class="btn primary" onclick="saveCategoryAdmin()" style="width:100%;">+ Add Category</button></div>
       <div class="card"><h3 style="margin-top:0; font-weight:600;">Manage Categories</h3><div id="cat-list"></div></div>
     </div>
+
     <div id="panel-settings" class="panel">
       <div class="card">
         <h3 style="margin-top:0; font-weight:600;">Contact Links Settings</h3>
@@ -309,6 +658,7 @@
         <button class="btn primary" onclick="saveSettingsAdmin()" style="width:100%;">Save Settings</button>
       </div>
     </div>
+
     <div id="panel-stats" class="panel"><div class="card"><h3 style="margin-top:0; font-weight:600;">Dashboard Stats</h3><div id="admin-stats-content"></div></div></div>
   </div>
 
@@ -332,42 +682,112 @@
   <div class="modal-overlay" id="infoModal" onclick="closeModal(event)"><div class="modal-box" style="text-align: left;"><h3 id="infoModalTitle" style="color: #8b5cf6; margin-top: 0;">Title</h3><div id="infoModalBody"></div></div></div>
 
 </div> <!-- END APP WRAPPER -->
+
 <script>
-  const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co"; 
-  const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg"; // <-- YAHAN APNI KEY PASTE KAREIN
+  const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let allDesigns = [], allCategories = [], currentDesignId = null, currentCategoryFilter = 'all', editingId = null, editingType = '';
   const frame = document.getElementById('photopea-frame');
   const globalLoader = document.getElementById('global-loader');
   const globalLoaderText = document.getElementById('global-loader-text');
-  
-  let isPhotopeaReady = false; 
+
+  let isPhotopeaReady = false;
   let bulkDesignId = null, isBulkGenerating = false, bulkQueue = [], bulkCurrentIndex = 0, bulkZip = null, bulkZipFolderName = "";
 
-  function showAlert(title, msg, icon = "✅") { document.getElementById('alertTitle').innerText = title; document.getElementById('alertMsg').innerText = msg; document.getElementById('alertIcon').innerText = icon; document.getElementById('customAlertModal').classList.add('active'); }
-  function closeCustomAlert() { document.getElementById('customAlertModal').classList.remove('active'); }
+  function showAlert(title, msg, icon = "✅") {
+    document.getElementById('alertTitle').innerText = title;
+    document.getElementById('alertMsg').innerText = msg;
+    document.getElementById('alertIcon').innerText = icon;
+    document.getElementById('customAlertModal').classList.add('active');
+  }
+
+  function closeCustomAlert() {
+    document.getElementById('customAlertModal').classList.remove('active');
+  }
+
   function showConfirm(title, msg) {
     return new Promise((resolve) => {
-      document.getElementById('confirmTitle').innerText = title; document.getElementById('confirmMsg').innerText = msg;
+      document.getElementById('confirmTitle').innerText = title;
+      document.getElementById('confirmMsg').innerText = msg;
       document.getElementById('customConfirmModal').classList.add('active');
-      document.getElementById('confirmBtnYes').onclick = () => { document.getElementById('customConfirmModal').classList.remove('active'); resolve(true); };
-      document.getElementById('confirmBtnNo').onclick = () => { document.getElementById('customConfirmModal').classList.remove('active'); resolve(false); };
+      document.getElementById('confirmBtnYes').onclick = () => {
+        document.getElementById('customConfirmModal').classList.remove('active');
+        resolve(true);
+      };
+      document.getElementById('confirmBtnNo').onclick = () => {
+        document.getElementById('customConfirmModal').classList.remove('active');
+        resolve(false);
+      };
     });
   }
 
-  function toggleTheme() { const wrapper = document.getElementById('app-wrapper'); const body = document.body; const menuItem = document.getElementById('theme-menu-item'); wrapper.classList.toggle('light-theme'); body.classList.toggle('light-theme'); if (wrapper.classList.contains('light-theme')) { menuItem.innerHTML = '🌙 Switch to Dark Theme'; localStorage.setItem('theme', 'light'); } else { menuItem.innerHTML = '☀️ Switch to Light Theme'; localStorage.setItem('theme', 'dark'); } }
+  function toggleTheme() {
+    const wrapper = document.getElementById('app-wrapper');
+    const body = document.body;
+    const menuItem = document.getElementById('theme-menu-item');
+    wrapper.classList.toggle('light-theme');
+    body.classList.toggle('light-theme');
+
+    if (wrapper.classList.contains('light-theme')) {
+      menuItem.innerHTML = '🌙 Switch to Dark Theme';
+      localStorage.setItem('theme', 'light');
+    } else {
+      menuItem.innerHTML = '☀️ Switch to Light Theme';
+      localStorage.setItem('theme', 'dark');
+    }
+  }
+  function toggleMenu() {
+    document.getElementById('dropdownMenu').classList.toggle('active');
+    document.querySelector('.menu-overlay').classList.toggle('active');
+  }
+
+  function openGuide() {
+    showAlert("How to Use", "Select a design, enter your name, and click Generate. Your PNG will be ready to download.", "📖");
+  }
+
+  function openContact() {
+    document.getElementById('user-view').style.display = 'none';
+    document.getElementById('contact-page').style.display = 'block';
+    loadSettings();
+  }
+
+  function openAbout() {
+    document.getElementById('user-view').style.display = 'none';
+    document.getElementById('about-page').style.display = 'block';
+  }
+
+  function closeSubPage(id) {
+    document.getElementById(id).style.display = 'none';
+    document.getElementById('user-view').style.display = 'block';
+  }
+
+  function toggleView() {
+    const userView = document.getElementById('user-view');
+    const adminView = document.getElementById('admin-view');
+    const isAdmin = adminView.style.display === 'block';
+
+    userView.style.display = isAdmin ? 'block' : 'none';
+    adminView.style.display = isAdmin ? 'none' : 'block';
+
+    if (!isAdmin) renderAdmin();
+  }
+
+  function switchTab(tab, element) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    element.classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+  }
 
   window.addEventListener('DOMContentLoaded', () => {
-    frame.src = "https://www.photopea.com";
-    try {
-      const savedTheme = localStorage.getItem('theme'); const menuItem = document.getElementById('theme-menu-item');
-      if (savedTheme === 'light') { document.getElementById('app-wrapper').classList.add('light-theme'); document.body.classList.add('light-theme'); menuItem.innerHTML = '🌙 Switch to Dark Theme'; } else { document.getElementById('app-wrapper').classList.remove('light-theme'); document.body.classList.remove('light-theme'); menuItem.innerHTML = '☀️ Switch to Light Theme'; }
-    } catch(e) {}
-    loadAllData();
+    frame.addEventListener('load', () => {
+      console.log('[Musaafir Editx] Photopea iframe loaded. Waiting for Photopea ready signal...');
+    });
   });
 
-  // Photopea communication: wait for the real ready signal and correlate each job.
+  // Photopea communication: wait for the actual ready signal.
   let photopeaReady = false;
   let photopeaReadyWaiters = [];
   let activePhotopeaJob = null;
@@ -375,12 +795,13 @@
 
   window.addEventListener("message", function(e) {
     if (e.source !== frame.contentWindow) return;
-    if (e.origin && e.origin !== PHOTOPEA_ORIGIN) return;
+    if (e.origin !== PHOTOPEA_ORIGIN) return;
 
     if (e.data === "done") {
       photopeaReady = true;
       isPhotopeaReady = true;
       photopeaReadyWaiters.splice(0).forEach(resolve => resolve());
+      console.log('[Musaafir Editx] Photopea is ready.');
       return;
     }
 
@@ -408,20 +829,26 @@
 
   function waitForPhotopeaReady(timeoutMs = 60000) {
     if (photopeaReady) return Promise.resolve();
+
     return new Promise((resolve, reject) => {
       let settled = false;
+
       const timer = setTimeout(() => {
         if (settled) return;
         settled = true;
         photopeaReadyWaiters = photopeaReadyWaiters.filter(fn => fn !== onReady);
-        reject(new Error("Photopea did not become ready within 60 seconds. Please refresh and try again."));
+        reject(new Error(
+          "Photopea did not become ready within 60 seconds. Please refresh the page and check whether photopea.com is blocked by your browser or network."
+        ));
       }, timeoutMs);
+
       function onReady() {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
         resolve();
       }
+
       photopeaReadyWaiters.push(onReady);
     });
   }
@@ -438,91 +865,164 @@
   }
 
   async function runPhotopeaJob(psdUrl, nameText) {
-    if (activePhotopeaJob) throw new Error("Another generation is already running. Please wait.");
+    if (activePhotopeaJob) {
+      throw new Error("Another generation is already running. Please wait.");
+    }
+
     await waitForPhotopeaReady();
 
     globalLoaderText.innerText = "Downloading PSD...";
+
     const fetchController = new AbortController();
     const fetchTimer = setTimeout(() => fetchController.abort(), 45000);
+
     let response;
+
     try {
-      response = await fetch(psdUrl, { cache: "no-store", signal: fetchController.signal });
+      response = await fetch(psdUrl, {
+        cache: "no-store",
+        signal: fetchController.signal
+      });
     } catch (fetchError) {
-      if (fetchError.name === "AbortError") throw new Error("PSD download took longer than 45 seconds. Check your internet connection and PSD hosting.");
-      throw new Error("PSD download failed. The file host may be blocking cross-origin access (CORS): " + fetchError.message);
-    } finally { clearTimeout(fetchTimer); }
-    if (!response.ok) throw new Error(`PSD download failed (HTTP ${response.status}). Check the PSD URL and its hosting permissions.`);
+      if (fetchError.name === "AbortError") {
+        throw new Error("PSD download took longer than 45 seconds. Check your internet connection and PSD hosting.");
+      }
+
+      throw new Error(
+        "PSD download failed. The file host may be blocking cross-origin access (CORS): " +
+        fetchError.message
+      );
+    } finally {
+      clearTimeout(fetchTimer);
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `PSD download failed (HTTP ${response.status}). Check the PSD URL and hosting permissions.`
+      );
+    }
+
     const arrayBuffer = await response.arrayBuffer();
-    if (!arrayBuffer || arrayBuffer.byteLength < 4) throw new Error("The downloaded PSD file is empty or invalid.");
+
+    if (!arrayBuffer || arrayBuffer.byteLength < 4) {
+      throw new Error("The downloaded PSD file is empty or invalid.");
+    }
 
     globalLoaderText.innerText = "Preparing Photopea...";
+
     const outputPromise = new Promise((resolve, reject) => {
       const job = {
-        resolve: value => { if (activePhotopeaJob === job) activePhotopeaJob = null; resolve(value); },
-        reject: error => { if (activePhotopeaJob === job) activePhotopeaJob = null; reject(error); },
+        resolve: value => {
+          if (activePhotopeaJob === job) activePhotopeaJob = null;
+          resolve(value);
+        },
+        reject: error => {
+          if (activePhotopeaJob === job) activePhotopeaJob = null;
+          reject(error);
+        },
         onReadyToOpen: null
       };
+
       activePhotopeaJob = job;
+
       job.onReadyToOpen = () => {
         globalLoaderText.innerText = "Opening PSD...";
-        // Photopea has acknowledged that the old document(s) are closed.
+
         frame.contentWindow.postMessage(arrayBuffer, PHOTOPEA_ORIGIN);
+
         globalLoaderText.innerText = "Processing...";
+
         const safeName = JSON.stringify(nameText);
+
         const script = `
           var waitCount = 0;
+
           function musaafirProcessPSD() {
             waitCount++;
-            if (!app.documents || app.documents.length === 0 || !app.activeDocument || !app.activeDocument.layers || app.activeDocument.layers.length === 0) {
-              if (waitCount > 100) { app.echoToOE("ERROR: PSD did not finish opening within 100 seconds."); return; }
+
+            if (!app.documents || app.documents.length === 0 ||
+                !app.activeDocument || !app.activeDocument.layers ||
+                app.activeDocument.layers.length === 0) {
+
+              if (waitCount > 100) {
+                app.echoToOE("ERROR: PSD did not finish opening within 100 seconds.");
+                return;
+              }
+
               setTimeout(musaafirProcessPSD, 1000);
               return;
             }
+
             try {
               var doc = app.activeDocument;
               var newText = ${safeName};
               var found = false;
+
               function findNameLayer(layers) {
                 for (var i = 0; i < layers.length; i++) {
                   var layer = layers[i];
-                  if (layer.typename === "LayerSet") findNameLayer(layer.layers);
-                  else if (layer.kind === LayerKind.TEXT && String(layer.name).trim().toUpperCase() === "NAME") {
+
+                  if (layer.typename === "LayerSet") {
+                    findNameLayer(layer.layers);
+                  } else if (
+                    layer.kind === LayerKind.TEXT &&
+                    String(layer.name).trim().toUpperCase() === "NAME"
+                  ) {
                     layer.textItem.contents = newText;
                     found = true;
                   }
                 }
               }
+
               findNameLayer(doc.layers);
-              if (!found) app.echoToOE("ERROR: Text layer named NAME was not found in this PSD.");
-              else doc.saveToOE("png");
-            } catch (err) { app.echoToOE("ERROR: " + err.message); }
+
+              if (!found) {
+                app.echoToOE("ERROR: Text layer named NAME was not found in this PSD.");
+              } else {
+                doc.saveToOE("png");
+              }
+
+            } catch (err) {
+              app.echoToOE("ERROR: " + err.message);
+            }
           }
+
           musaafirProcessPSD();
         `;
+
         frame.contentWindow.postMessage(script, PHOTOPEA_ORIGIN);
       };
     });
 
-    // Set up a clean document state before sending the next PSD. Acknowledgement
-    // prevents the previous design from being mistaken for the newly opened file.
     const closeScript = `
       try {
-        while (app.documents && app.documents.length > 0) app.activeDocument.close(SaveOptions.DONOTSAVECHANGES);
+        while (app.documents && app.documents.length > 0) {
+          app.activeDocument.close(SaveOptions.DONOTSAVECHANGES);
+        }
         app.echoToOE("MUSAAFIR_READY_TO_OPEN");
-      } catch (err) { app.echoToOE("ERROR: Could not prepare Photopea: " + err.message); }
+      } catch (err) {
+        app.echoToOE("ERROR: Could not prepare Photopea: " + err.message);
+      }
     `;
+
     frame.contentWindow.postMessage(closeScript, PHOTOPEA_ORIGIN);
 
     let timeoutId;
+
     try {
       return await Promise.race([
         outputPromise,
-        new Promise((_, reject) => { timeoutId = setTimeout(() => reject(new Error("Generation timed out. Photopea did not return the PNG. Check the PSD and NAME text layer.")), 145000); })
+        new Promise((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error(
+              "Generation timed out. Photopea did not return the PNG. Check the PSD and NAME text layer."
+            ));
+          }, 145000);
+        })
       ]);
     } finally {
       clearTimeout(timeoutId);
-      // If the job timed out without Photopea replying, reset the editor so a
-      // delayed export from the old job cannot be mistaken for the next one.
+
       if (activePhotopeaJob) {
         activePhotopeaJob = null;
         photopeaReady = false;
@@ -533,101 +1033,411 @@
   }
   async function loadAllData() {
     try {
-      const { data: catData, error: catErr } = await supabaseClient.from('categories').select('*').order('order'); if (catErr) throw catErr; allCategories = catData || [];
-      const { data: desData, error: desErr } = await supabaseClient.from('designs').select('*').order('order'); if (desErr) throw desErr;
-      allDesigns = (desData || []).map(d => ({ id: d.id, name: d.name, categoryId: d.category_id, psdUrl: d.psd_url, previewUrl: d.preview_url, status: d.status, order: d.order, downloads: d.downloads }));
-      await loadSettings(); renderAdmin(); renderUser(); renderStats(); 
-    } catch (err) { showAlert("Data Load Error", "Could not fetch data.", "❌"); }
+      const { data: catData, error: catErr } = await supabaseClient.from('categories').select('*').order('order');
+      if (catErr) throw catErr;
+      allCategories = catData || [];
+
+      const { data: desData, error: desErr } = await supabaseClient.from('designs').select('*').order('order');
+      if (desErr) throw desErr;
+
+      allDesigns = (desData || []).map(d => ({
+        id: d.id,
+        name: d.name,
+        categoryId: d.category_id,
+        psdUrl: d.psd_url,
+        previewUrl: d.preview_url,
+        status: d.status,
+        order: d.order,
+        downloads: d.downloads
+      }));
+
+      await loadSettings();
+      renderAdmin();
+      renderUser();
+      renderStats();
+    } catch (err) {
+      console.error("Data loading failed:", err);
+      showAlert("Data Load Error", "Could not fetch data. Please check your Supabase connection.", "❌");
+    }
   }
 
   function renderStats() {
     const totalGenerates = allDesigns.reduce((sum, d) => sum + (d.downloads || 0), 0);
-    document.getElementById('admin-stats-content').innerHTML = `<div style="display:flex; flex-direction:column; gap:15px; margin-top:15px;"><div style="background:rgba(139,92,246,0.1); padding:15px; border-radius:10px; display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Total Designs</span><h2 style="margin:0; color:var(--text-main);">${allDesigns.length}</h2></div><div style="background:rgba(59,130,246,0.1); padding:15px; border-radius:10px; display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Total Categories</span><h2 style="margin:0; color:var(--text-main);">${allCategories.length}</h2></div><div style="background:rgba(34,197,94,0.1); padding:15px; border-radius:10px; display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Total Generates</span><h2 style="margin:0; color:var(--text-main);">${totalGenerates}</h2></div></div>`;
+
+    document.getElementById('admin-stats-content').innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:15px; margin-top:15px;">
+        <div style="background:rgba(139,92,246,0.1); padding:15px; border-radius:10px; display:flex; justify-content:space-between;">
+          <span style="color:var(--text-muted);">Total Designs</span>
+          <h2 style="margin:0; color:var(--text-main);">${allDesigns.length}</h2>
+        </div>
+        <div style="background:rgba(59,130,246,0.1); padding:15px; border-radius:10px; display:flex; justify-content:space-between;">
+          <span style="color:var(--text-muted);">Total Categories</span>
+          <h2 style="margin:0; color:var(--text-main);">${allCategories.length}</h2>
+        </div>
+        <div style="background:rgba(34,197,94,0.1); padding:15px; border-radius:10px; display:flex; justify-content:space-between;">
+          <span style="color:var(--text-muted);">Total Generates</span>
+          <h2 style="margin:0; color:var(--text-main);">${totalGenerates}</h2>
+        </div>
+      </div>`;
   }
 
   async function loadSettings() {
     try {
-      const { data, error } = await supabaseClient.from('settings').select('*'); if (error) throw error;
-      document.getElementById('contact-fb').href = data.find(s => s.key === 'fb')?.value || "#"; document.getElementById('contact-wa').href = `https://wa.me/${data.find(s => s.key === 'wa')?.value || ""}`; document.getElementById('contact-email').href = `mailto:${data.find(s => s.key === 'email')?.value || ""}`;
-      document.getElementById('setting-fb').value = data.find(s => s.key === 'fb')?.value || ""; document.getElementById('setting-wa').value = data.find(s => s.key === 'wa')?.value || ""; document.getElementById('setting-email').value = data.find(s => s.key === 'email')?.value || "";
-    } catch (e) {}
+      const { data, error } = await supabaseClient.from('settings').select('*');
+      if (error) throw error;
+
+      document.getElementById('contact-fb').href =
+        data.find(s => s.key === 'fb')?.value || "#";
+
+      document.getElementById('contact-wa').href =
+        `https://wa.me/${data.find(s => s.key === 'wa')?.value || ""}`;
+
+      document.getElementById('contact-email').href =
+        `mailto:${data.find(s => s.key === 'email')?.value || ""}`;
+
+      document.getElementById('setting-fb').value =
+        data.find(s => s.key === 'fb')?.value || "";
+
+      document.getElementById('setting-wa').value =
+        data.find(s => s.key === 'wa')?.value || "";
+
+      document.getElementById('setting-email').value =
+        data.find(s => s.key === 'email')?.value || "";
+    } catch (e) {
+      console.warn("Settings could not be loaded:", e);
+    }
   }
 
   function renderAdmin() {
-    document.getElementById('cat-list').innerHTML = allCategories.map(c => `<div class="admin-item"><div class="admin-item-info"><h4>${c.name}</h4></div><div class="admin-actions"><button class="btn action-btn" onclick="moveItem('categories', '${c.id}', 'up')">⬅️ Left</button><button class="btn action-btn" onclick="moveItem('categories', '${c.id}', 'down')">➡️ Right</button><button class="btn action-btn" onclick="openEditModal('category', '${c.id}')">✏️ Edit</button><button class="btn danger action-btn" onclick="deleteCategory('${c.id}')">Delete</button></div></div>`).join('') || '<p>No categories.</p>';
-    const catOptions = allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join(''); document.getElementById('admin-category').innerHTML = catOptions; document.getElementById('edit-category').innerHTML = catOptions;
+    document.getElementById('cat-list').innerHTML = allCategories.map(c => `
+      <div class="admin-item">
+        <div class="admin-item-info"><h4>${c.name}</h4></div>
+        <div class="admin-actions">
+          <button class="btn action-btn" onclick="moveItem('categories', '${c.id}', 'up')">⬅️ Left</button>
+          <button class="btn action-btn" onclick="moveItem('categories', '${c.id}', 'down')">➡️ Right</button>
+          <button class="btn action-btn" onclick="openEditModal('category', '${c.id}')">✏️ Edit</button>
+          <button class="btn danger action-btn" onclick="deleteCategory('${c.id}')">Delete</button>
+        </div>
+      </div>`).join('') || '<p>No categories.</p>';
+
+    const catOptions = allCategories.map(c =>
+      `<option value="${c.id}">${c.name}</option>`
+    ).join('');
+
+    document.getElementById('admin-category').innerHTML = catOptions;
+    document.getElementById('edit-category').innerHTML = catOptions;
+
     document.getElementById('admin-list').innerHTML = allDesigns.map(d => {
-      const cat = allCategories.find(c => c.id === d.categoryId); const isPublished = d.status !== 'draft';
-      return `<div class="admin-item"><img src="${d.previewUrl}"><div class="admin-item-info"><h4>${d.name} <span class="status-badge ${isPublished ? 'status-published' : 'status-draft'}">${isPublished ? 'PUBLISHED' : 'DRAFT'}</span></h4><span>Cat: ${cat ? cat.name : 'Unknown'} | Downloads: <b>${d.downloads || 0}</b></span></div><div class="admin-actions"><button class="btn action-btn" onclick="moveItem('designs', '${d.id}', 'up')">⬆️</button><button class="btn action-btn" onclick="moveItem('designs', '${d.id}', 'down')">⬇️</button><button class="btn action-btn" onclick="openBulkModal('${d.id}')" style="background: rgba(139, 92, 246, 0.2); color: #a78bfa;">📦 Bulk</button><button class="btn action-btn" onclick="togglePublish('${d.id}')">${isPublished ? '👁️ Hide' : '👁️ Show'}</button><button class="btn action-btn" onclick="openEditModal('design', '${d.id}')">✏️ Edit</button><button class="btn danger action-btn" onclick="deleteDesign('${d.id}')">Delete</button></div></div>`}).join('') || '<p>No designs.</p>';
+      const cat = allCategories.find(c => c.id === d.categoryId);
+      const isPublished = d.status !== 'draft';
+
+      return `
+        <div class="admin-item">
+          <img src="${d.previewUrl}">
+          <div class="admin-item-info">
+            <h4>${d.name}
+              <span class="status-badge ${isPublished ? 'status-published' : 'status-draft'}">
+                ${isPublished ? 'PUBLISHED' : 'DRAFT'}
+              </span>
+            </h4>
+            <span>Cat: ${cat ? cat.name : 'Unknown'} | Downloads: <b>${d.downloads || 0}</b></span>
+          </div>
+          <div class="admin-actions">
+            <button class="btn action-btn" onclick="moveItem('designs', '${d.id}', 'up')">⬆️</button>
+            <button class="btn action-btn" onclick="moveItem('designs', '${d.id}', 'down')">⬇️</button>
+            <button class="btn action-btn" onclick="openBulkModal('${d.id}')">📦 Bulk</button>
+            <button class="btn action-btn" onclick="togglePublish('${d.id}')">${isPublished ? '👁️ Hide' : '👁️ Show'}</button>
+            <button class="btn action-btn" onclick="openEditModal('design', '${d.id}')">✏️ Edit</button>
+            <button class="btn danger action-btn" onclick="deleteDesign('${d.id}')">Delete</button>
+          </div>
+        </div>`;
+    }).join('') || '<p>No designs.</p>';
   }
 
   function renderUser() {
-    document.getElementById('category-bar').innerHTML = `<div class="cat-tab ${currentCategoryFilter === 'all' ? 'active' : ''}" onclick="filterCategory('all')">All</div>` + allCategories.map(cat => `<div class="cat-tab ${currentCategoryFilter === cat.id ? 'active' : ''}" onclick="filterCategory('${cat.id}')">${cat.name}</div>`).join('');
-    let filtered = allDesigns.filter(d => d.status !== 'draft'); if (currentCategoryFilter !== 'all') filtered = filtered.filter(d => d.categoryId === currentCategoryFilter);
+    document.getElementById('category-bar').innerHTML =
+      `<div class="cat-tab ${currentCategoryFilter === 'all' ? 'active' : ''}" onclick="filterCategory('all')">All</div>` +
+      allCategories.map(cat =>
+        `<div class="cat-tab ${currentCategoryFilter === cat.id ? 'active' : ''}" onclick="filterCategory('${cat.id}')">${cat.name}</div>`
+      ).join('');
+
+    let filtered = allDesigns.filter(d => d.status !== 'draft');
+
+    if (currentCategoryFilter !== 'all') {
+      filtered = filtered.filter(d => d.categoryId === currentCategoryFilter);
+    }
+
     const grid = document.getElementById('design-grid');
-    if (filtered.length === 0) { grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 20px;"><h3>No designs found</h3></div>`; return; }
-    grid.innerHTML = filtered.map(d => `<div class="design-card ${d.id === currentDesignId ? 'active' : ''}" id="card-${d.id}"><div class="img-container" onclick="toggleCard('${d.id}')"><img src="${d.previewUrl}"><div id="loader-${d.id}" class="loader-overlay"><div class="spinner"></div><div>Generating...</div></div></div><div class="action-area"><input type="text" id="input-${d.id}" placeholder="Your Name"><button class="btn primary" id="btn-${d.id}" style="width:100%;padding:14px;font-size:16px" onclick="generateImage('${d.id}')">✨ Generate & Download</button></div></div>`).join('');
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px 20px;"><h3>No designs found</h3></div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(d => `
+      <div class="design-card ${d.id === currentDesignId ? 'active' : ''}" id="card-${d.id}">
+        <div class="img-container" onclick="toggleCard('${d.id}')">
+          <img src="${d.previewUrl}">
+          <div id="loader-${d.id}" class="loader-overlay">
+            <div class="spinner"></div><div>Generating...</div>
+          </div>
+        </div>
+        <div class="action-area">
+          <input type="text" id="input-${d.id}" placeholder="Your Name">
+          <button class="btn primary" id="btn-${d.id}" style="width:100%;padding:14px;font-size:16px" onclick="generateImage('${d.id}')">
+            ✨ Generate & Download
+          </button>
+        </div>
+      </div>`).join('');
   }
 
-  function filterCategory(catId) { currentCategoryFilter = catId; currentDesignId = null; renderUser(); }
-  function toggleCard(id) { currentDesignId = (currentDesignId === id) ? null : id; renderUser(); }
-  async function moveItem(store, id, dir) { let items = store === 'designs' ? [...allDesigns] : [...allCategories]; let idx = items.findIndex(i => i.id === id); if (idx === -1) return; if (dir === 'up' && idx > 0) { let t = items[idx]; items[idx] = items[idx - 1]; items[idx - 1] = t; } else if (dir === 'down' && idx < items.length - 1) { let t = items[idx]; items[idx] = items[idx + 1]; items[idx + 1] = t; } else return; for (let i = 0; i < items.length; i++) { items[i].order = i + 1; await supabaseClient.from(store).update({ order: items[i].order }).eq('id', items[i].id); } loadAllData(); }
-  async function togglePublish(id) { const d = allDesigns.find(x => x.id === id); await supabaseClient.from('designs').update({ status: (d.status === 'draft') ? 'published' : 'draft' }).eq('id', id); loadAllData(); }
-  async function saveCategoryAdmin() { const n = document.getElementById('cat-name').value.trim(); if (!n) return; const o = allCategories.length > 0 ? Math.max(...allCategories.map(c => c.order || 0)) + 1 : 1; await supabaseClient.from('categories').insert([{ id: 'cat_' + Date.now(), name: n, order: o }]); document.getElementById('cat-name').value = ''; showAlert("Success", "Added", "✅"); loadAllData(); }
-  async function deleteCategory(id) { if (!await showConfirm("Delete", "Sure?")) return; await supabaseClient.from('designs').delete().eq('category_id', id); await supabaseClient.from('categories').delete().eq('id', id); loadAllData(); }
-  function openEditModal(type, id) { editingType = type; editingId = id; document.getElementById('editModal').classList.add('active'); if (type === 'design') { const d = allDesigns.find(x => x.id === id); document.getElementById('editModalTitle').innerText = "Edit Design"; document.getElementById('edit-name').value = d.name; document.getElementById('edit-category').value = d.categoryId; document.getElementById('edit-category-row').style.display = 'flex'; } else { const c = allCategories.find(x => x.id === id); document.getElementById('editModalTitle').innerText = "Edit Category"; document.getElementById('edit-name').value = c.name; document.getElementById('edit-category-row').style.display = 'none'; } }
-  function closeEditModal() { document.getElementById('editModal').classList.remove('active'); }
-  async function saveEdit() { const n = document.getElementById('edit-name').value.trim(); if (!n) return; if (editingType === 'design') { await supabaseClient.from('designs').update({ name: n, category_id: document.getElementById('edit-category').value }).eq('id', editingId); } else { await supabaseClient.from('categories').update({ name: n }).eq('id', editingId); } closeEditModal(); loadAllData(); }
-  
+  function filterCategory(catId) {
+    currentCategoryFilter = catId;
+    currentDesignId = null;
+    renderUser();
+  }
+
+  function toggleCard(id) {
+    currentDesignId = (currentDesignId === id) ? null : id;
+    renderUser();
+  }
+
+  async function moveItem(store, id, dir) {
+    let items = store === 'designs' ? [...allDesigns] : [...allCategories];
+    let idx = items.findIndex(i => i.id === id);
+
+    if (idx === -1) return;
+
+    if (dir === 'up' && idx > 0) {
+      let t = items[idx];
+      items[idx] = items[idx - 1];
+      items[idx - 1] = t;
+    } else if (dir === 'down' && idx < items.length - 1) {
+      let t = items[idx];
+      items[idx] = items[idx + 1];
+      items[idx + 1] = t;
+    } else {
+      return;
+    }
+
+    for (let i = 0; i < items.length; i++) {
+      items[i].order = i + 1;
+      await supabaseClient.from(store).update({ order: items[i].order }).eq('id', items[i].id);
+    }
+
+    loadAllData();
+  }
+
+  async function togglePublish(id) {
+    const d = allDesigns.find(x => x.id === id);
+    if (!d) return;
+
+    await supabaseClient.from('designs')
+      .update({ status: (d.status === 'draft') ? 'published' : 'draft' })
+      .eq('id', id);
+
+    loadAllData();
+  }
+
+  async function saveCategoryAdmin() {
+    const n = document.getElementById('cat-name').value.trim();
+    if (!n) return;
+
+    const o = allCategories.length > 0
+      ? Math.max(...allCategories.map(c => c.order || 0)) + 1
+      : 1;
+
+    await supabaseClient.from('categories').insert([{
+      id: 'cat_' + Date.now(),
+      name: n,
+      order: o
+    }]);
+
+    document.getElementById('cat-name').value = '';
+    showAlert("Success", "Added", "✅");
+    loadAllData();
+  }
+
+  async function deleteCategory(id) {
+    if (!await showConfirm("Delete", "Sure?")) return;
+
+    await supabaseClient.from('designs').delete().eq('category_id', id);
+    await supabaseClient.from('categories').delete().eq('id', id);
+    loadAllData();
+  }
+
+  function openEditModal(type, id) {
+    editingType = type;
+    editingId = id;
+    document.getElementById('editModal').classList.add('active');
+
+    if (type === 'design') {
+      const d = allDesigns.find(x => x.id === id);
+      document.getElementById('editModalTitle').innerText = "Edit Design";
+      document.getElementById('edit-name').value = d.name;
+      document.getElementById('edit-category').value = d.categoryId;
+      document.getElementById('edit-category-row').style.display = 'flex';
+    } else {
+      const c = allCategories.find(x => x.id === id);
+      document.getElementById('editModalTitle').innerText = "Edit Category";
+      document.getElementById('edit-name').value = c.name;
+      document.getElementById('edit-category-row').style.display = 'none';
+    }
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+  }
+
+  async function saveEdit() {
+    const n = document.getElementById('edit-name').value.trim();
+    if (!n) return;
+
+    if (editingType === 'design') {
+      await supabaseClient.from('designs')
+        .update({
+          name: n,
+          category_id: document.getElementById('edit-category').value
+        }).eq('id', editingId);
+    } else {
+      await supabaseClient.from('categories')
+        .update({ name: n }).eq('id', editingId);
+    }
+
+    closeEditModal();
+    loadAllData();
+  }
+
   async function saveDesignAdmin() {
-    const n = document.getElementById('admin-name').value.trim(); const c = document.getElementById('admin-category').value; const p = document.getElementById('admin-file').files[0]; const pr = document.getElementById('admin-preview').files[0];
-    if (!n || !p || !pr) return showAlert("Missing", "Fill all.", "⚠️");
-    const btn = document.querySelector('button[onclick="saveDesignAdmin()"]'); const txt = btn.innerHTML; btn.innerHTML = '<span class="btn-spinner"></span> Uploading...'; btn.disabled = true;
-    const fdP = new FormData(); fdP.append('file', p); fdP.append('upload_preset', "test_preset"); const fdPr = new FormData(); fdPr.append('file', pr); fdPr.append('upload_preset', "test_preset");
-    try {
-        const [resP, resPr] = await Promise.all([fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`, { method: 'POST', body: fdP }), fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`, { method: 'POST', body: fdPr })]);
-        const dP = await resP.json(); const dPr = await resPr.json(); if (!dP.secure_url || !dPr.secure_url) throw new Error("Upload failed.");
-        const maxO = allDesigns.length > 0 ? Math.max(...allDesigns.map(d => d.order || 0)) + 1 : 1;
-        await supabaseClient.from('designs').insert([{ id: 'd_' + Date.now(), name: n, category_id: c, psd_url: dP.secure_url, preview_url: dPr.secure_url, status: 'published', order: maxO, downloads: 0 }]);
-        document.getElementById('admin-name').value = ''; document.getElementById('admin-file').value = ''; document.getElementById('admin-preview').value = ''; btn.innerHTML = txt; btn.disabled = false; showAlert("Success!", "Design Published!", "🎉"); loadAllData();
-    } catch (err) { showAlert("Failed", err.message, "❌"); btn.innerHTML = txt; btn.disabled = false; }
-  }
-  
-  async function deleteDesign(id) { if (!await showConfirm("Delete", "Sure?")) return; await supabaseClient.from('designs').delete().eq('id', id); if (currentDesignId === id) currentDesignId = null; loadAllData(); }
-  async function saveSettingsAdmin() { await supabaseClient.from('settings').upsert([{ key: "fb", value: document.getElementById('setting-fb').value }, { key: "wa", value: document.getElementById('setting-wa').value }, { key: 'email', value: document.getElementById('setting-email').value }]); showAlert("Saved", "Links updated.", "✅"); loadSettings(); }
+    const n = document.getElementById('admin-name').value.trim();
+    const c = document.getElementById('admin-category').value;
+    const p = document.getElementById('admin-file').files[0];
+    const pr = document.getElementById('admin-preview').files[0];
 
-  // --- SINGLE NAME GENERATION ---
+    if (!n || !p || !pr) {
+      return showAlert("Missing", "Fill all.", "⚠️");
+    }
+
+    const btn = document.querySelector('button[onclick="saveDesignAdmin()"]');
+    const txt = btn.innerHTML;
+    btn.innerHTML = '<span class="btn-spinner"></span> Uploading...';
+    btn.disabled = true;
+
+    const fdP = new FormData();
+    fdP.append('file', p);
+    fdP.append('upload_preset', "test_preset");
+
+    const fdPr = new FormData();
+    fdPr.append('file', pr);
+    fdPr.append('upload_preset', "test_preset");
+
+    try {
+      const [resP, resPr] = await Promise.all([
+        fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`, { method: 'POST', body: fdP }),
+        fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`, { method: 'POST', body: fdPr })
+      ]);
+
+      const dP = await resP.json();
+      const dPr = await resPr.json();
+
+      if (!dP.secure_url || !dPr.secure_url) throw new Error("Upload failed.");
+
+      const maxO = allDesigns.length > 0
+        ? Math.max(...allDesigns.map(d => d.order || 0)) + 1
+        : 1;
+
+      await supabaseClient.from('designs').insert([{
+        id: 'd_' + Date.now(),
+        name: n,
+        category_id: c,
+        psd_url: dP.secure_url,
+        preview_url: dPr.secure_url,
+        status: 'published',
+        order: maxO,
+        downloads: 0
+      }]);
+
+      document.getElementById('admin-name').value = '';
+      document.getElementById('admin-file').value = '';
+      document.getElementById('admin-preview').value = '';
+
+      btn.innerHTML = txt;
+      btn.disabled = false;
+      showAlert("Success!", "Design Published!", "🎉");
+      loadAllData();
+
+    } catch (err) {
+      showAlert("Failed", err.message, "❌");
+      btn.innerHTML = txt;
+      btn.disabled = false;
+    }
+  }
+
+  async function deleteDesign(id) {
+    if (!await showConfirm("Delete", "Sure?")) return;
+
+    await supabaseClient.from('designs').delete().eq('id', id);
+    if (currentDesignId === id) currentDesignId = null;
+    loadAllData();
+  }
+
+  async function saveSettingsAdmin() {
+    await supabaseClient.from('settings').upsert([
+      { key: "fb", value: document.getElementById('setting-fb').value },
+      { key: "wa", value: document.getElementById('setting-wa').value },
+      { key: 'email', value: document.getElementById('setting-email').value }
+    ]);
+
+    showAlert("Saved", "Links updated.", "✅");
+    loadSettings();
+  }
+
+  // SINGLE NAME GENERATION
   async function generateImage(cardId) {
     const design = allDesigns.find(d => d.id === cardId);
     const input = document.getElementById(`input-${cardId}`);
     const text = input ? input.value.trim() : "";
+
     if (!design) return showAlert("Design Missing", "Please refresh the page and select the design again.", "❌");
     if (!text) return showAlert("Name Required", "Enter name.", "✍️");
     if (activePhotopeaJob) return showAlert("Please Wait", "Another image is currently being generated.", "⏳");
 
     currentDesignId = cardId;
+
     const btn = document.getElementById(`btn-${cardId}`);
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Generating...'; }
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-spinner"></span> Generating...';
+    }
+
     showPhotopea();
     globalLoaderText.innerText = photopeaReady ? "Downloading PSD..." : "Warming Up Photopea...";
 
     try {
       const result = await runPhotopeaJob(design.psdUrl, text);
       const blob = result instanceof Blob ? result : new Blob([result], { type: "image/png" });
+
       if (!blob.size) throw new Error("Photopea returned an empty image.");
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `${text.replace(/[\\/:*?"<>|]/g, "_")}_Musaafir.png`;
-      document.body.appendChild(a); a.click(); a.remove();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
       setTimeout(() => URL.revokeObjectURL(url), 30000);
 
-      const { error } = await supabaseClient.from('designs').update({ downloads: (design.downloads || 0) + 1 }).eq('id', cardId);
+      const { error } = await supabaseClient.from('designs')
+        .update({ downloads: (design.downloads || 0) + 1 })
+        .eq('id', cardId);
+
       if (error) console.warn("Download count could not be updated:", error.message);
+
       design.downloads = (design.downloads || 0) + 1;
       renderStats();
-      const img = document.querySelector(`#card-${cardId} .img-container img`);
-      if (img) { img.src = url; img.style.opacity = '1'; img.style.filter = 'none'; }
+
     } catch (err) {
       console.error("Name generation failed:", err);
       showAlert("Generation Failed", err.message || "Unknown error. Please try again.", "❌");
@@ -639,73 +1449,150 @@
 
   function resetUI(cardId) {
     const b = document.getElementById(`btn-${cardId}`);
-    if (b) { b.disabled = false; b.innerHTML = '✨ Generate & Download'; }
+    if (b) {
+      b.disabled = false;
+      b.innerHTML = '✨ Generate & Download';
+    }
+  }
+  // ==========================================
+  // BULK GENERATION
+  // ==========================================
+
+  function openBulkModal(id) {
+    bulkDesignId = id;
+    document.getElementById('bulkNamesInput').value = '';
+    document.getElementById('bulkNamesInput').disabled = false;
+    document.getElementById('bulkStartBtn').style.display = 'block';
+    document.getElementById('bulkCancelBtn').innerText = 'Cancel';
+    document.getElementById('bulkProgressContainer').style.display = 'none';
+    document.getElementById('bulkGenerateModal').classList.add('active');
   }
 
-  // BULK GENERATION
-  function openBulkModal(id) { bulkDesignId = id; document.getElementById('bulkNamesInput').value = ''; document.getElementById('bulkNamesInput').disabled = false; document.getElementById('bulkStartBtn').style.display = 'block'; document.getElementById('bulkCancelBtn').innerText = 'Cancel'; document.getElementById('bulkProgressContainer').style.display = 'none'; document.getElementById('bulkGenerateModal').classList.add('active'); }
   function closeBulkModal() {
     if (isBulkGenerating) {
       showConfirm("Stop?", "Stop after the current image finishes?").then(res => {
-        if (res) { isBulkGenerating = false; document.getElementById('bulkCancelBtn').innerText = 'Stopping...'; }
+        if (res) {
+          isBulkGenerating = false;
+          document.getElementById('bulkCancelBtn').innerText = 'Stopping...';
+        }
       });
-    } else document.getElementById('bulkGenerateModal').classList.remove('active');
+    } else {
+      document.getElementById('bulkGenerateModal').classList.remove('active');
+    }
   }
-  
+
   async function startBulkGeneration() {
-    const names = document.getElementById('bulkNamesInput').value.split('\n').map(n => n.trim()).filter(n => n !== '');
-    if (names.length === 0) return showAlert("Error", "Enter names.", "⚠️");
-    if (names.length > 20) return showAlert("Limit", "Max 20.", "⚠️");
+    const names = document.getElementById('bulkNamesInput').value
+      .split('\n')
+      .map(n => n.trim())
+      .filter(n => n !== '');
+
+    if (names.length === 0) {
+      return showAlert("Error", "Enter names.", "⚠️");
+    }
+
+    if (names.length > 20) {
+      return showAlert("Limit", "Maximum 20 names allowed.", "⚠️");
+    }
+
     const design = allDesigns.find(d => d.id === bulkDesignId);
-    if (!design) return showAlert("Error", "Design not found. Refresh and try again.", "❌");
+
+    if (!design) {
+      return showAlert("Error", "Design not found. Refresh and try again.", "❌");
+    }
+
+    if (activePhotopeaJob) {
+      return showAlert("Please Wait", "Another image is currently being generated.", "⏳");
+    }
 
     isBulkGenerating = true;
     bulkQueue = names;
     bulkCurrentIndex = 0;
     bulkZip = new JSZip();
+
     bulkZipFolderName = design.name.replace(/[^a-z0-9]/gi, '_') + "_Bulk";
+
     document.getElementById('bulkNamesInput').disabled = true;
     document.getElementById('bulkStartBtn').style.display = 'none';
     document.getElementById('bulkCancelBtn').innerText = 'Stop';
     document.getElementById('bulkProgressContainer').style.display = 'block';
+
     updateBulkProgress();
     showPhotopea();
+
     try {
       await waitForPhotopeaReady();
       await processNextBulkName(design);
     } catch (err) {
       console.error("Bulk generation failed:", err);
-      showAlert("Bulk Error", err.message || "Bulk generation failed.", "❌");
+
+      showAlert(
+        "Bulk Error",
+        err.message || "Bulk generation failed.",
+        "❌"
+      );
+
       isBulkGenerating = false;
       hidePhotopea();
+
       document.getElementById('bulkNamesInput').disabled = false;
       document.getElementById('bulkStartBtn').style.display = 'block';
+      document.getElementById('bulkGenerateModal').classList.remove('active');
     }
   }
 
   function updateBulkProgress() {
-    document.getElementById('bulkProgressText').innerText = `Generating ${Math.min(bulkCurrentIndex + 1, bulkQueue.length)} of ${bulkQueue.length}...`;
-    document.getElementById('bulkProgressBar').style.width = ((bulkCurrentIndex / bulkQueue.length) * 100) + '%';
+    document.getElementById('bulkProgressText').innerText =
+      `Generating ${Math.min(bulkCurrentIndex + 1, bulkQueue.length)} of ${bulkQueue.length}...`;
+
+    document.getElementById('bulkProgressBar').style.width =
+      ((bulkCurrentIndex / bulkQueue.length) * 100) + '%';
   }
 
   async function processNextBulkName(design) {
     while (isBulkGenerating && bulkCurrentIndex < bulkQueue.length) {
       const text = bulkQueue[bulkCurrentIndex];
+
       updateBulkProgress();
-      globalLoaderText.innerText = `Bulk: ${bulkCurrentIndex + 1} of ${bulkQueue.length} — ${text}`;
+
+      globalLoaderText.innerText =
+        `Bulk: ${bulkCurrentIndex + 1} of ${bulkQueue.length} — ${text}`;
+
       const result = await runPhotopeaJob(design.psdUrl, text);
-      const blob = result instanceof Blob ? result : new Blob([result], { type: "image/png" });
-      if (!blob.size) throw new Error(`Photopea returned an empty PNG for ${text}.`);
+
+      const blob = result instanceof Blob
+        ? result
+        : new Blob([result], { type: "image/png" });
+
+      if (!blob.size) {
+        throw new Error(`Photopea returned an empty PNG for ${text}.`);
+      }
+
       const safeFileName = text.replace(/[\\/:*?"<>|]/g, "_");
-      bulkZip.file(`${String(bulkCurrentIndex + 1).padStart(2, '0')}_${safeFileName}.png`, blob);
-      const { error } = await supabaseClient.from('designs').update({ downloads: (design.downloads || 0) + 1 }).eq('id', bulkDesignId);
-      if (error) console.warn("Bulk download count update failed:", error.message);
+
+      bulkZip.file(
+        `${String(bulkCurrentIndex + 1).padStart(2, '0')}_${safeFileName}.png`,
+        blob
+      );
+
+      const { error } = await supabaseClient
+        .from('designs')
+        .update({ downloads: (design.downloads || 0) + 1 })
+        .eq('id', bulkDesignId);
+
+      if (error) {
+        console.warn("Bulk download count update failed:", error.message);
+      }
+
       design.downloads = (design.downloads || 0) + 1;
       bulkCurrentIndex++;
     }
-    if (isBulkGenerating && bulkCurrentIndex >= bulkQueue.length) await finishBulkGeneration();
-    else {
+
+    if (isBulkGenerating && bulkCurrentIndex >= bulkQueue.length) {
+      await finishBulkGeneration();
+    } else {
       hidePhotopea();
+
       document.getElementById('bulkNamesInput').disabled = false;
       document.getElementById('bulkStartBtn').style.display = 'block';
       document.getElementById('bulkGenerateModal').classList.remove('active');
@@ -715,33 +1602,77 @@
   async function finishBulkGeneration() {
     document.getElementById('bulkProgressText').innerText = "Creating ZIP file...";
     document.getElementById('bulkProgressBar').style.width = '100%';
+
     const content = await bulkZip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(content);
+
     const a = document.createElement("a");
-    a.href = url; a.download = bulkZipFolderName + ".zip";
-    document.body.appendChild(a); a.click(); a.remove();
+    a.href = url;
+    a.download = bulkZipFolderName + ".zip";
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
     setTimeout(() => URL.revokeObjectURL(url), 30000);
+
     isBulkGenerating = false;
     hidePhotopea();
+
     document.getElementById('bulkGenerateModal').classList.remove('active');
     document.getElementById('bulkNamesInput').disabled = false;
     document.getElementById('bulkStartBtn').style.display = 'block';
+
     await loadAllData();
+
     showAlert("Success!", "Your ZIP file has been downloaded.", "🎉");
   }
 
-  // --- UI NAVIGATION ---
-  function toggleMenu() { document.getElementById('dropdownMenu').classList.toggle('active'); document.getElementById('menuOverlay').classList.toggle('active'); }
-  function openGuide() { document.getElementById('infoModalTitle').innerHTML = "📖 Guide"; document.getElementById('infoModalBody').innerHTML = `<ul><li><b>Step 1:</b> Choose design.</li><li><b>Step 2:</b> Type name.</li><li><b>Step 3:</b> Click Generate.</li><li><b>Step 4:</b> Image downloads.</li></ul>`; document.getElementById('infoModal').classList.add('active'); }
-  function openContact() { hideAllViews(); document.getElementById('contact-page').style.display = 'block'; }
-  function openAbout() { hideAllViews(); document.getElementById('about-page').style.display = 'block'; }
-  function closeSubPage(pageId) { document.getElementById(pageId).style.display = 'none'; document.getElementById('user-view').style.display = 'block'; }
-  function hideAllViews() { document.getElementById('user-view').style.display = 'none'; document.getElementById('contact-page').style.display = 'none'; document.getElementById('about-page').style.display = 'none'; document.getElementById('admin-view').style.display = 'none'; }
-  function closeModal(e) { if (e.target.classList.contains('modal-overlay')) { e.target.classList.remove('active'); } }
-  
-  let isAdmin = false;
-  function toggleView() { isAdmin = !isAdmin; hideAllViews(); if (isAdmin) { document.getElementById('admin-view').style.display = 'block'; loadAllData(); } else { document.getElementById('user-view').style.display = 'block'; } }
-  function switchTab(tabName, el) { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.panel').forEach(p => p.classList.remove('active')); if(el) el.classList.add('active'); document.getElementById('panel-' + tabName).classList.add('active'); }
+
+  // ==========================================
+  // MODAL AND NAVIGATION HELPERS
+  // ==========================================
+
+  function closeModal(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+      e.target.classList.remove('active');
+    }
+  }
+
+
+  // ==========================================
+  // PHOTOPEA STARTUP AND WEBSITE INITIALIZATION
+  // ==========================================
+
+  window.addEventListener('DOMContentLoaded', function() {
+
+    console.log("[Musaafir Editx] Starting website...");
+
+    // Start Photopea immediately.
+    // The iframe must send its actual "done" message before processing begins.
+    if (frame && frame.src !== PHOTOPEA_ORIGIN) {
+      frame.src = PHOTOPEA_ORIGIN;
+    }
+
+    // Load website data from Supabase.
+    loadAllData();
+
+    // Restore saved theme.
+    const savedTheme = localStorage.getItem('theme');
+
+    if (savedTheme === 'light') {
+      document.getElementById('app-wrapper').classList.add('light-theme');
+      document.body.classList.add('light-theme');
+
+      const themeItem = document.getElementById('theme-menu-item');
+      if (themeItem) {
+        themeItem.innerHTML = '🌙 Switch to Dark Theme';
+      }
+    }
+
+    console.log("[Musaafir Editx] Initialization complete.");
+  });
+
 </script>
 </body>
 </html>
