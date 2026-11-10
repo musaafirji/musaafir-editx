@@ -493,7 +493,7 @@
   async function deleteDesign(id) { if (!await showConfirm("Delete", "Sure?")) return; await supabaseClient.from('designs').delete().eq('id', id); if (currentDesignId === id) currentDesignId = null; loadAllData(); }
   async function saveSettingsAdmin() { await supabaseClient.from('settings').upsert([{ key: "fb", value: document.getElementById('setting-fb').value }, { key: "wa", value: document.getElementById('setting-wa').value }, { key: 'email', value: document.getElementById('setting-email').value }]); showAlert("Saved", "Links updated.", "✅"); loadSettings(); }
 
-  // --- UPDATED MAIN GENERATION LOGIC (JSON Payload Method) ---
+  // --- UPDATED MAIN GENERATION LOGIC ---
   async function generateImage(cardId) {
     const design = allDesigns.find(d => d.id === cardId);
     const text = document.getElementById(`input-${cardId}`).value.trim();
@@ -511,7 +511,6 @@
     const processPSD = () => {
         globalLoaderText.innerText = "Processing PSD...";
         
-        // Safe text escaping
         const safeText = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
 
         const scriptCode = `
@@ -543,10 +542,13 @@
             script: scriptCode
         };
         
-        frame.contentWindow.postMessage(payload, "*");
+        // CHANGE 1: Added JSON.stringify
+        frame.contentWindow.postMessage(JSON.stringify(payload), "*");
     };
 
-    processPSD();
+    // CHANGE 2: Safe processPSD call
+    if (isPhotopeaReady) processPSD(); 
+    else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
   }
 
   function resetUI(cardId) { const b = document.getElementById(`btn-${cardId}`); if (b) { b.disabled = false; b.innerHTML = '✨ Generate & Download'; } }
@@ -569,7 +571,7 @@
   
   function updateBulkProgress() { document.getElementById('bulkProgressText').innerText = `Generating ${bulkCurrentIndex + 1} of ${bulkQueue.length}...`; document.getElementById('bulkProgressBar').style.width = ((bulkCurrentIndex / bulkQueue.length) * 100) + '%'; }
   
-  // --- UPDATED BULK GENERATION LOGIC (JSON Payload Method) ---
+  // --- UPDATED BULK GENERATION LOGIC ---
   async function processNextBulkName(design) {
     if (!isBulkGenerating || bulkCurrentIndex >= bulkQueue.length) { if (isBulkGenerating) finishBulkGeneration(); return; }
     updateBulkProgress(); const text = bulkQueue[bulkCurrentIndex];
@@ -608,10 +610,13 @@
             script: scriptCode
         };
         
-        frame.contentWindow.postMessage(payload, "*");
+        // CHANGE 3: Added JSON.stringify
+        frame.contentWindow.postMessage(JSON.stringify(payload), "*");
     };
 
-    processPSD();
+    // CHANGE 4: Safe processPSD call
+    if (isPhotopeaReady) processPSD(); 
+    else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
   }
   
   async function finishBulkGeneration() { 
