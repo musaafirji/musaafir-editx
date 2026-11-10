@@ -493,7 +493,7 @@
   async function deleteDesign(id) { if (!await showConfirm("Delete", "Sure?")) return; await supabaseClient.from('designs').delete().eq('id', id); if (currentDesignId === id) currentDesignId = null; loadAllData(); }
   async function saveSettingsAdmin() { await supabaseClient.from('settings').upsert([{ key: "fb", value: document.getElementById('setting-fb').value }, { key: "wa", value: document.getElementById('setting-wa').value }, { key: 'email', value: document.getElementById('setting-email').value }]); showAlert("Saved", "Links updated.", "✅"); loadSettings(); }
 
-  // --- MAIN GENERATION LOGIC (Using app.open with callback) ---
+  // --- UPDATED MAIN GENERATION LOGIC (JSON Payload Method) ---
   async function generateImage(cardId) {
     const design = allDesigns.find(d => d.id === cardId);
     const text = document.getElementById(`input-${cardId}`).value.trim();
@@ -503,41 +503,50 @@
     btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Generating...';
     
     showPhotopea();
-    globalLoaderText.innerText = "Processing...";
+    globalLoaderText.innerText = "Processing PSD...";
 
     clearTimeout(generationTimeout);
     generationTimeout = setTimeout(() => { hidePhotopea(); showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 150000);
 
     const processPSD = () => {
         globalLoaderText.innerText = "Processing PSD...";
-        const script = `
+        
+        // Safe text escaping
+        const safeText = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+
+        const scriptCode = `
           try {
-            app.open("${design.psdUrl}", function() {
-              try {
-                var doc = app.activeDocument;
-                var newText = "${text.replace(/"/g, '\\"')}";
-                var found = false;
-                function findLayer(layers) {
-                  for (var i = 0; i < layers.length; i++) {
-                    var l = layers[i];
-                    if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                    else if (l.kind === LayerKind.TEXT) {
-                      if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
-                    }
+            if (app.documents.length === 0) {
+              app.echoToOE("ERROR: Document load nahi hua. Please try again.");
+            } else {
+              var doc = app.activeDocument;
+              var newText = "${safeText}";
+              var found = false;
+              function findLayer(layers) {
+                for (var i = 0; i < layers.length; i++) {
+                  var l = layers[i];
+                  if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                  else if (l.kind === LayerKind.TEXT) {
+                    if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
                   }
                 }
-                findLayer(doc.layers);
-                if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-                else doc.saveToOE("png");
-              } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            });
+              }
+              findLayer(doc.layers);
+              if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
+              else doc.saveToOE("png");
+            }
           } catch(err) { app.echoToOE("ERROR: " + err.message); }
         `;
-        frame.contentWindow.postMessage(script, "*");
+
+        const payload = {
+            files: [ design.psdUrl ],
+            script: scriptCode
+        };
+        
+        frame.contentWindow.postMessage(payload, "*");
     };
 
-    if (isPhotopeaReady) processPSD(); 
-    else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
+    processPSD();
   }
 
   function resetUI(cardId) { const b = document.getElementById(`btn-${cardId}`); if (b) { b.disabled = false; b.innerHTML = '✨ Generate & Download'; } }
@@ -560,6 +569,7 @@
   
   function updateBulkProgress() { document.getElementById('bulkProgressText').innerText = `Generating ${bulkCurrentIndex + 1} of ${bulkQueue.length}...`; document.getElementById('bulkProgressBar').style.width = ((bulkCurrentIndex / bulkQueue.length) * 100) + '%'; }
   
+  // --- UPDATED BULK GENERATION LOGIC (JSON Payload Method) ---
   async function processNextBulkName(design) {
     if (!isBulkGenerating || bulkCurrentIndex >= bulkQueue.length) { if (isBulkGenerating) finishBulkGeneration(); return; }
     updateBulkProgress(); const text = bulkQueue[bulkCurrentIndex];
@@ -567,32 +577,41 @@
     globalLoaderText.innerText = `Bulk: ${bulkCurrentIndex + 1} of ${bulkQueue.length}`;
 
     const processPSD = () => {
-        const script = `
+        const safeText = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+
+        const scriptCode = `
           try {
-            app.open("${design.psdUrl}", function() {
-              try {
-                var doc = app.activeDocument;
-                var newText = "${text.replace(/"/g, '\\"')}";
-                var found = false;
-                function findLayer(layers) {
-                  for (var i = 0; i < layers.length; i++) {
-                    var l = layers[i];
-                    if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                    else if (l.kind === LayerKind.TEXT) {
-                      if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
-                    }
+            if (app.documents.length === 0) {
+              app.echoToOE("ERROR: Document load nahi hua.");
+            } else {
+              var doc = app.activeDocument;
+              var newText = "${safeText}";
+              var found = false;
+              function findLayer(layers) {
+                for (var i = 0; i < layers.length; i++) {
+                  var l = layers[i];
+                  if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                  else if (l.kind === LayerKind.TEXT) {
+                    if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
                   }
                 }
-                findLayer(doc.layers);
-                if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-                else doc.saveToOE("png");
-              } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            });
+              }
+              findLayer(doc.layers);
+              if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
+              else doc.saveToOE("png");
+            }
           } catch(err) { app.echoToOE("ERROR: " + err.message); }
         `;
-        frame.contentWindow.postMessage(script, "*");
+
+        const payload = {
+            files: [ design.psdUrl ],
+            script: scriptCode
+        };
+        
+        frame.contentWindow.postMessage(payload, "*");
     };
-    if (isPhotopeaReady) processPSD(); else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
+
+    processPSD();
   }
   
   async function finishBulkGeneration() { 
