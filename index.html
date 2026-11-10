@@ -507,41 +507,55 @@
     clearTimeout(generationTimeout);
     generationTimeout = setTimeout(() => { hidePhotopea(); showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 150000);
 
-    const processPSD = () => {
-        globalLoaderText.innerText = "Processing PSD...";
+    const processPSD = async () => {
+        globalLoaderText.innerText = "Downloading PSD...";
         
-        const safeText = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
-
-        const scriptCode = `
-          try {
-            try { while(app.documents.length > 0) { app.documents[0].close(); } } catch(e){}
-            app.echoToOE("STATUS: Loading file...");
-            app.open("${design.psdUrl}");
-            var doc = app.activeDocument;
-            var newText = "${safeText}";
-            var found = false;
-            function findLayer(layers) {
-              for (var i = 0; i < layers.length; i++) {
-                var l = layers[i];
-                if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                else if (l.kind === LayerKind.TEXT) {
-                  if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
-                }
-              }
-            }
-            app.echoToOE("STATUS: Applying text...");
-            findLayer(doc.layers);
-            if (!found) {
-                app.echoToOE("ERROR: 'NAME' layer not found.");
-            } else {
-                app.echoToOE("STATUS: Saving Image...");
-                doc.saveToOE("png");
-            }
-          } catch(err) { app.echoToOE("ERROR: " + err.message); }
-        `;
-
-        // Send pure script string directly to execute it synchronously
-        frame.contentWindow.postMessage(scriptCode, "*");
+        try {
+            const response = await fetch(design.psdUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            
+            globalLoaderText.innerText = "Loading file...";
+            
+            // Step 1: Send ArrayBuffer directly to open it
+            frame.contentWindow.postMessage(arrayBuffer, "*");
+            
+            // Step 2: Wait a few seconds for Photopea to process the buffer, then run the script
+            setTimeout(() => {
+                globalLoaderText.innerText = "Applying text...";
+                const safeText = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+                
+                const scriptCode = `
+                  try {
+                    var doc = app.activeDocument;
+                    var newText = "${safeText}";
+                    var found = false;
+                    function findLayer(layers) {
+                      for (var i = 0; i < layers.length; i++) {
+                        var l = layers[i];
+                        if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                        else if (l.kind === LayerKind.TEXT) {
+                          if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
+                        }
+                      }
+                    }
+                    findLayer(doc.layers);
+                    if (!found) {
+                        app.echoToOE("ERROR: 'NAME' layer not found.");
+                    } else {
+                        app.echoToOE("STATUS: Saving Image...");
+                        doc.saveToOE("png");
+                    }
+                  } catch(err) { app.echoToOE("ERROR: " + err.message); }
+                `;
+                
+                frame.contentWindow.postMessage(scriptCode, "*");
+            }, 6000); // Wait 6 seconds for the file to open
+            
+        } catch(err) {
+            hidePhotopea();
+            showAlert("Download Error", err.message, "❌");
+            resetUI(cardId);
+        }
     };
 
     if (isPhotopeaReady) processPSD(); 
@@ -575,35 +589,45 @@
     
     globalLoaderText.innerText = `Bulk: ${bulkCurrentIndex + 1} of ${bulkQueue.length}`;
 
-    const processPSD = () => {
-        const safeText = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
-
-        const scriptCode = `
-          try {
-            try { while(app.documents.length > 0) { app.documents[0].close(); } } catch(e){}
-            app.open("${design.psdUrl}");
-            var doc = app.activeDocument;
-            var newText = "${safeText}";
-            var found = false;
-            function findLayer(layers) {
-              for (var i = 0; i < layers.length; i++) {
-                var l = layers[i];
-                if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                else if (l.kind === LayerKind.TEXT) {
-                  if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
-                }
-              }
-            }
-            findLayer(doc.layers);
-            if (!found) {
-                app.echoToOE("ERROR: 'NAME' layer not found.");
-            } else {
-                doc.saveToOE("png");
-            }
-          } catch(err) { app.echoToOE("ERROR: " + err.message); }
-        `;
-
-        frame.contentWindow.postMessage(scriptCode, "*");
+    const processPSD = async () => {
+        try {
+            const response = await fetch(design.psdUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            
+            frame.contentWindow.postMessage(arrayBuffer, "*");
+            
+            setTimeout(() => {
+                const safeText = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+                const scriptCode = `
+                  try {
+                    var doc = app.activeDocument;
+                    var newText = "${safeText}";
+                    var found = false;
+                    function findLayer(layers) {
+                      for (var i = 0; i < layers.length; i++) {
+                        var l = layers[i];
+                        if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                        else if (l.kind === LayerKind.TEXT) {
+                          if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
+                        }
+                      }
+                    }
+                    findLayer(doc.layers);
+                    if (!found) {
+                        app.echoToOE("ERROR: 'NAME' layer not found.");
+                    } else {
+                        doc.saveToOE("png");
+                    }
+                  } catch(err) { app.echoToOE("ERROR: " + err.message); }
+                `;
+                frame.contentWindow.postMessage(scriptCode, "*");
+            }, 6000);
+            
+        } catch(err) {
+            hidePhotopea();
+            showAlert("Download Error", err.message, "❌");
+            isBulkGenerating = false;
+        }
     };
 
     if (isPhotopeaReady) processPSD(); 
