@@ -59,13 +59,14 @@
 
   *{box-sizing:border-box; font-family: 'Poppins', sans-serif;}
   
-  body {
-    margin: 0; color: var(--text-main); background-color: var(--bg-color);
+  html, body {
+    margin: 0; padding: 0; color: var(--text-main); background-color: var(--bg-color);
     background-image: var(--bg-image); background-attachment: fixed; min-height: 100vh;
     transition: background-color 0.4s, color 0.4s;
+    overflow-x: hidden; /* Fix horizontal scroll */
   }
   
-  header{padding:15px 20px; background:var(--header-bg); backdrop-filter: blur(15px); border-bottom:1px solid var(--header-border); display:flex;justify-content:center;align-items:center; position:sticky;top:0;z-index:1000;}
+  header{padding:15px 20px; background:var(--header-bg); backdrop-filter: blur(15px); border-bottom:1px solid var(--header-border); display:flex;justify-content:center;align-items:center; position:sticky;top:0;z-index:1000; transition: background 0.4s;}
   .header-content { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
   
   .logo-text { 
@@ -171,17 +172,18 @@
   .status-published { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
   .status-draft { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
   
-  /* FIXED IFRAME: Screen par sabke upar but transparent aur click-through */
+  /* FIXED IFRAME: Background me hidden but active */
   #photopea-frame {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 99999; /* Sabke upar */
-    opacity: 0.01; /* Transparent */
-    pointer-events: none; /* Click through to website */
+    z-index: -1; 
+    opacity: 0.01; 
     border: none;
+    pointer-events: none; 
+    touch-action: none;
   }
 
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; }
@@ -371,17 +373,22 @@
     loadAllData();
   });
 
+  // Yeh function ensure karta hai ke Photopea poori tarah load ho jaye
+  frame.onload = function() {
+    console.log("Frame Loaded. Initializing Engine...");
+    setTimeout(() => {
+        isPhotopeaReady = true;
+        console.log("Photopea Engine Ready!");
+        if (pendingGeneration) {
+            pendingGeneration();
+            pendingGeneration = null;
+        }
+    }, 4000); // 4 seconds wait for Photopea to initialize
+  };
+
   // Listen to messages from Photopea
   window.addEventListener("message", async function(e) {
-    // 1. Photopea Engine is Ready
-    if (e.data === "done") {
-        isPhotopeaReady = true;
-        console.log("Photopea Engine Ready");
-        if (pendingGeneration) { pendingGeneration(); pendingGeneration = null; }
-        return;
-    }
-
-    // 2. Status Updates from Photopea
+    // 1. Status Updates
     if (typeof e.data === 'string' && e.data.startsWith("STATUS:")) {
         const statusText = e.data.replace("STATUS:", "").trim();
         if (currentDesignId) {
@@ -391,7 +398,7 @@
         return;
     }
 
-    // 3. Error from Photopea
+    // 2. Error
     if (typeof e.data === 'string' && e.data.startsWith("ERROR:")) {
         clearTimeout(generationTimeout);
         if (isBulkGenerating) {
@@ -404,7 +411,7 @@
         return;
     }
 
-    // 4. Image Generated (ArrayBuffer or Blob)
+    // 3. Image Generated (ArrayBuffer or Blob)
     if (e.data instanceof ArrayBuffer || e.data instanceof Blob) {
         clearTimeout(generationTimeout);
         if (isBulkGenerating) {
@@ -611,7 +618,7 @@
   }
 
   // ==========================================
-  // PHOTOPEA GENERATION (NEW APPROACH)
+  // PHOTOPEA GENERATION (ArrayBuffer Method)
   // ==========================================
   async function generateImage(cardId) {
     const design = allDesigns.find(d => d.id === cardId);
@@ -629,36 +636,43 @@
     clearTimeout(generationTimeout);
     generationTimeout = setTimeout(() => { showAlert("Timeout", "Generation took too long.", "⏳"); resetUI(cardId); }, 45000);
 
-    const processPSD = () => {
-        // Send script directly to Photopea to download and process
-        const script = `
-          try {
-            app.echoToOE("STATUS: Downloading PSD...");
-            app.open("${design.psdUrl}");
-            
-            app.echoToOE("STATUS: Applying Effects...");
-            var doc = app.activeDocument;
-            var newText = "${text.replace(/"/g, '\\"')}";
-            var found = false;
-            function findLayer(layers) {
-              for (var i = 0; i < layers.length; i++) {
-                var l = layers[i];
-                if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                else if (l.kind === LayerKind.TEXT) {
-                  if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
+    const processPSD = async () => {
+        try {
+          loader.innerHTML = `<div class="spinner"></div><div>Downloading PSD...</div>`;
+          const response = await fetch(design.psdUrl);
+          if (!response.ok) throw new Error("Network response was not ok");
+          const arrayBuffer = await response.arrayBuffer();
+          
+          loader.innerHTML = `<div class="spinner"></div><div>Processing...</div>`;
+          frame.contentWindow.postMessage(arrayBuffer, "*");
+          
+          setTimeout(() => {
+            const script = `
+              try {
+                var doc = app.activeDocument;
+                if(!doc) throw new Error("No doc loaded");
+                var newText = "${text.replace(/"/g, '\\"')}";
+                var found = false;
+                function findLayer(layers) {
+                  for (var i = 0; i < layers.length; i++) {
+                    var l = layers[i];
+                    if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                    else if (l.kind === LayerKind.TEXT) {
+                      if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
+                    }
+                  }
                 }
-              }
-            }
-            findLayer(doc.layers);
-            
-            if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-            else {
-               app.echoToOE("STATUS: Saving PNG...");
-               doc.saveToOE("png");
-            }
-          } catch(err) { app.echoToOE("ERROR: " + err.message); }
-        `;
-        frame.contentWindow.postMessage(script, "*");
+                findLayer(doc.layers);
+                if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
+                else doc.saveToOE("png");
+              } catch(err) { app.echoToOE("ERROR: " + err.message); }
+            `;
+            frame.contentWindow.postMessage(script, "*");
+          }, 4000); // 4 seconds for PSD to parse
+        } catch (err) {
+          showAlert("Error", "File fetch error: " + err.message, "❌");
+          resetUI(cardId);
+        }
     };
 
     if (isPhotopeaReady) { processPSD(); } else { 
@@ -695,28 +709,35 @@
     if (!isBulkGenerating || bulkCurrentIndex >= bulkQueue.length) { if (isBulkGenerating) finishBulkGeneration(); return; }
     updateBulkProgress(); const text = bulkQueue[bulkCurrentIndex];
 
-    const processPSD = () => {
-        const script = `
-          try {
-            app.open("${design.psdUrl}");
-            var doc = app.activeDocument;
-            var newText = "${text.replace(/"/g, '\\"')}";
-            var found = false;
-            function findLayer(layers) {
-              for (var i = 0; i < layers.length; i++) {
-                var l = layers[i];
-                if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                else if (l.kind === LayerKind.TEXT) {
-                  if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
+    const processPSD = async () => {
+        try {
+          const response = await fetch(design.psdUrl);
+          const arrayBuffer = await response.arrayBuffer();
+          frame.contentWindow.postMessage(arrayBuffer, "*");
+          
+          setTimeout(() => {
+            const script = `
+              try {
+                var doc = app.activeDocument;
+                var newText = "${text.replace(/"/g, '\\"')}";
+                var found = false;
+                function findLayer(layers) {
+                  for (var i = 0; i < layers.length; i++) {
+                    var l = layers[i];
+                    if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                    else if (l.kind === LayerKind.TEXT) {
+                      if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
+                    }
+                  }
                 }
-              }
-            }
-            findLayer(doc.layers);
-            if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-            else doc.saveToOE("png");
-          } catch(err) { app.echoToOE("ERROR: " + err.message); }
-        `;
-        frame.contentWindow.postMessage(script, "*");
+                findLayer(doc.layers);
+                if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
+                else doc.saveToOE("png");
+              } catch(err) { app.echoToOE("ERROR: " + err.message); }
+            `;
+            frame.contentWindow.postMessage(script, "*");
+          }, 4000);
+        } catch (err) { showAlert("Error", "Fetch error: " + err.message, "❌"); isBulkGenerating = false; }
     };
     if (isPhotopeaReady) { processPSD(); } else { pendingGeneration = processPSD; }
   }
