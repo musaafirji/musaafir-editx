@@ -69,12 +69,12 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;       /* 100vw ki bajaye 100% behtar hai */
-    height: 100%;      /* 100vh ki bajaye 100% behtar hai */
-    z-index: -1;       /* Iframe ko sabse peechay bhejna */
-    opacity: 1 !important; /* Engine zinda rakhne ke liye zaroori */
+    width: 100%;
+    height: 100%;
+    z-index: -1; 
+    opacity: 1 !important; 
     border: none;
-    pointer-events: none; /* VERY IMPORTANT: Taake user k clicks iframe pe na jayein */
+    pointer-events: none; 
   }
 
   /* 2. The entire website UI */
@@ -453,13 +453,20 @@
     clearTimeout(generationTimeout);
     generationTimeout = setTimeout(() => { showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 45000);
 
-    const processPSD = () => {
-        loader.innerHTML = `<div class="spinner"></div><div>Downloading...</div>`;
-        const script = `
-          try {
-            app.open("${design.psdUrl}", function() {
+    const processPSD = async () => {
+        try {
+          loader.innerHTML = `<div class="spinner"></div><div>Downloading...</div>`;
+          const response = await fetch(design.psdUrl);
+          const arrayBuffer = await response.arrayBuffer();
+          
+          loader.innerHTML = `<div class="spinner"></div><div>Processing...</div>`;
+          frame.contentWindow.postMessage(arrayBuffer, "*");
+          
+          setTimeout(() => {
+            const script = `
               try {
                 var doc = app.activeDocument;
+                if(!doc) throw new Error("No doc loaded");
                 var newText = "${text.replace(/"/g, '\\"')}";
                 var found = false;
                 function findLayer(layers) {
@@ -475,10 +482,13 @@
                 if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
                 else doc.saveToOE("png");
               } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            });
-          } catch(err) { app.echoToOE("ERROR: " + err.message); }
-        `;
-        frame.contentWindow.postMessage(script, "*");
+            `;
+            frame.contentWindow.postMessage(script, "*");
+          }, 5000); // 5 seconds wait
+        } catch (err) {
+          showAlert("Error", "File fetch error: " + err.message, "❌");
+          resetUI(cardId);
+        }
     };
 
     if (isPhotopeaReady) processPSD(); 
@@ -500,9 +510,16 @@
   async function processNextBulkName(design) {
     if (!isBulkGenerating || bulkCurrentIndex >= bulkQueue.length) { if (isBulkGenerating) finishBulkGeneration(); return; }
     updateBulkProgress(); const text = bulkQueue[bulkCurrentIndex];
-    const processPSD = () => {
-        const script = `try { app.open("${design.psdUrl}", function() { try { var doc = app.activeDocument; var newText = "${text.replace(/"/g, '\\"')}"; var found = false; function findLayer(layers) { for (var i = 0; i < layers.length; i++) { var l = layers[i]; if (l.typename === "LayerSet") { findLayer(l.layers); } else if (l.kind === LayerKind.TEXT) { if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; } } } } findLayer(doc.layers); if (!found) app.echoToOE("ERROR: 'NAME' layer not found."); else doc.saveToOE("png"); } catch(err) { app.echoToOE("ERROR: " + err.message); } }); } catch(err) { app.echoToOE("ERROR: " + err.message); }`;
-        frame.contentWindow.postMessage(script, "*");
+    const processPSD = async () => {
+        try {
+          const response = await fetch(design.psdUrl);
+          const arrayBuffer = await response.arrayBuffer();
+          frame.contentWindow.postMessage(arrayBuffer, "*");
+          setTimeout(() => {
+            const script = `try { var doc = app.activeDocument; var newText = "${text.replace(/"/g, '\\"')}"; var found = false; function findLayer(layers) { for (var i = 0; i < layers.length; i++) { var l = layers[i]; if (l.typename === "LayerSet") { findLayer(l.layers); } else if (l.kind === LayerKind.TEXT) { if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; } } } } findLayer(doc.layers); if (!found) app.echoToOE("ERROR: 'NAME' layer not found."); else doc.saveToOE("png"); } catch(err) { app.echoToOE("ERROR: " + err.message); }`;
+            frame.contentWindow.postMessage(script, "*");
+          }, 5000);
+        } catch (err) { showAlert("Error", "Fetch error: " + err.message, "❌"); isBulkGenerating = false; }
     };
     if (isPhotopeaReady) processPSD(); else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
   }
