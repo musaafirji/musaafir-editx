@@ -64,23 +64,26 @@
     overflow-x: hidden;
   }
 
+  /* Photopea iframe setup */
   #photopea-frame {
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
     z-index: 1; 
-    opacity: 0.01;
+    opacity: 0.01; /* Hidden in background */
     border: none;
     pointer-events: none; 
     transition: opacity 0.3s;
   }
 
+  /* When generating, iframe comes forward to keep browser awake */
   #photopea-frame.active-generation {
     z-index: 99998;
     opacity: 1 !important;
     pointer-events: auto; 
   }
 
+  /* Website UI */
   #app-wrapper {
     position: relative;
     z-index: 10;
@@ -94,13 +97,14 @@
     overflow-x: hidden;
   }
 
+  /* Full screen loader covering Photopea */
   #global-loader {
     display: none;
     position: fixed;
     inset: 0;
     z-index: 99999;
-    background: rgba(10, 12, 16, 0.9);
-    backdrop-filter: blur(10px);
+    background: rgba(10, 12, 16, 0.85);
+    backdrop-filter: blur(8px);
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -355,7 +359,8 @@
   function toggleTheme() { const wrapper = document.getElementById('app-wrapper'); const body = document.body; const menuItem = document.getElementById('theme-menu-item'); wrapper.classList.toggle('light-theme'); body.classList.toggle('light-theme'); if (wrapper.classList.contains('light-theme')) { menuItem.innerHTML = '🌙 Switch to Dark Theme'; localStorage.setItem('theme', 'light'); } else { menuItem.innerHTML = '☀️ Switch to Light Theme'; localStorage.setItem('theme', 'dark'); } }
 
   window.addEventListener('DOMContentLoaded', () => {
-    frame.src = "https://www.photopea.com";
+    // API initialization fix
+    frame.src = "https://www.photopea.com#%7B%7D";
     try {
       const savedTheme = localStorage.getItem('theme'); const menuItem = document.getElementById('theme-menu-item');
       if (savedTheme === 'light') { document.getElementById('app-wrapper').classList.add('light-theme'); document.body.classList.add('light-theme'); menuItem.innerHTML = '🌙 Switch to Dark Theme'; } else { document.getElementById('app-wrapper').classList.remove('light-theme'); document.body.classList.remove('light-theme'); menuItem.innerHTML = '☀️ Switch to Light Theme'; }
@@ -488,6 +493,7 @@
   async function deleteDesign(id) { if (!await showConfirm("Delete", "Sure?")) return; await supabaseClient.from('designs').delete().eq('id', id); if (currentDesignId === id) currentDesignId = null; loadAllData(); }
   async function saveSettingsAdmin() { await supabaseClient.from('settings').upsert([{ key: "fb", value: document.getElementById('setting-fb').value }, { key: "wa", value: document.getElementById('setting-wa').value }, { key: 'email', value: document.getElementById('setting-email').value }]); showAlert("Saved", "Links updated.", "✅"); loadSettings(); }
 
+  // --- MAIN GENERATION LOGIC (Using app.open with callback) ---
   async function generateImage(cardId) {
     const design = allDesigns.find(d => d.id === cardId);
     const text = document.getElementById(`input-${cardId}`).value.trim();
@@ -497,25 +503,18 @@
     btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Generating...';
     
     showPhotopea();
-    globalLoaderText.innerText = "Warming Up...";
+    globalLoaderText.innerText = "Processing...";
 
     clearTimeout(generationTimeout);
     generationTimeout = setTimeout(() => { hidePhotopea(); showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 150000);
 
-    const processPSD = async () => {
-        try {
-          globalLoaderText.innerText = "Downloading PSD...";
-          const response = await fetch(design.psdUrl);
-          const arrayBuffer = await response.arrayBuffer();
-          
-          globalLoaderText.innerText = "Processing...";
-          frame.contentWindow.postMessage(arrayBuffer, "*");
-          
-          setTimeout(() => {
-            const script = `
+    const processPSD = () => {
+        globalLoaderText.innerText = "Processing PSD...";
+        const script = `
+          try {
+            app.open("${design.psdUrl}", function() {
               try {
                 var doc = app.activeDocument;
-                if(!doc) throw new Error("No doc loaded");
                 var newText = "${text.replace(/"/g, '\\"')}";
                 var found = false;
                 function findLayer(layers) {
@@ -531,14 +530,10 @@
                 if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
                 else doc.saveToOE("png");
               } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            `;
-            frame.contentWindow.postMessage(script, "*");
-          }, 4000);
-        } catch (err) {
-          hidePhotopea();
-          showAlert("Error", "File fetch error: " + err.message, "❌");
-          resetUI(cardId);
-        }
+            });
+          } catch(err) { app.echoToOE("ERROR: " + err.message); }
+        `;
+        frame.contentWindow.postMessage(script, "*");
     };
 
     if (isPhotopeaReady) processPSD(); 
@@ -571,14 +566,10 @@
     
     globalLoaderText.innerText = `Bulk: ${bulkCurrentIndex + 1} of ${bulkQueue.length}`;
 
-    const processPSD = async () => {
-        try {
-          const response = await fetch(design.psdUrl);
-          const arrayBuffer = await response.arrayBuffer();
-          frame.contentWindow.postMessage(arrayBuffer, "*");
-          
-          setTimeout(() => {
-            const script = `
+    const processPSD = () => {
+        const script = `
+          try {
+            app.open("${design.psdUrl}", function() {
               try {
                 var doc = app.activeDocument;
                 var newText = "${text.replace(/"/g, '\\"')}";
@@ -596,10 +587,10 @@
                 if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
                 else doc.saveToOE("png");
               } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            `;
-            frame.contentWindow.postMessage(script, "*");
-          }, 4000);
-        } catch (err) { hidePhotopea(); showAlert("Error", "Fetch error: " + err.message, "❌"); isBulkGenerating = false; }
+            });
+          } catch(err) { app.echoToOE("ERROR: " + err.message); }
+        `;
+        frame.contentWindow.postMessage(script, "*");
     };
     if (isPhotopeaReady) processPSD(); else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
   }
