@@ -199,12 +199,12 @@
   /* FIXED PHOTOPEA FRAME (Prevents mobile/laptop suspension) */
   #photopea-frame {
     position: fixed;
-    bottom: 0;
-    right: 0;
-    width: 10px;
-    height: 10px;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* Website ke peeche rahega */
     opacity: 0.01; 
-    z-index: -9999;
     border: none;
     pointer-events: none;
   }
@@ -973,6 +973,7 @@
             const script = `
               try {
                 var doc = app.activeDocument;
+                if(!doc) throw new Error("No doc");
                 var newText = "${text.replace(/"/g, '\\"')}";
                 var found = false;
                 function findLayer(layers) {
@@ -990,7 +991,7 @@
               } catch(err) { app.echoToOE("ERROR: " + err.message); }
             `;
             frame.contentWindow.postMessage(script, "*");
-          }, 4000);
+          }, 6000); // Increased to 6 seconds
         } catch (err) {
           showAlert("Error", "File fetch error: " + err.message, "❌");
           isBulkGenerating = false;
@@ -1038,26 +1039,31 @@
     img.style.opacity = '0.4';
     img.style.filter = 'blur(5px)';
     loader.style.display = 'flex';
+    loader.innerHTML = `<div class="spinner"></div><div>Downloading PSD...</div>`;
 
-    // SAFETY TIMEOUT: 20 seconds
+    // SAFETY TIMEOUT: Increased to 45 seconds
     clearTimeout(generationTimeout);
     generationTimeout = setTimeout(() => {
-        showAlert("Timeout", "Generation took too long. Please check your internet connection and try again.", "⏳");
+        showAlert("Timeout", "Generation took too long. Your internet might be slow or file is too big. Please try again.", "⏳");
         resetUI(cardId);
-    }, 20000);
+    }, 45000);
 
     const processPSD = async () => {
         try {
+          console.log("Fetching PSD...");
           const response = await fetch(design.psdUrl);
           if (!response.ok) throw new Error("Network response was not ok");
           const arrayBuffer = await response.arrayBuffer();
           
+          console.log("Sending to Photopea...");
+          loader.innerHTML = `<div class="spinner"></div><div>Processing...</div>`;
           frame.contentWindow.postMessage(arrayBuffer, "*");
           
           setTimeout(() => {
             const script = `
               try {
                 var doc = app.activeDocument;
+                if(!doc) throw new Error("No doc loaded");
                 var newText = "${text.replace(/"/g, '\\"')}";
                 var found = false;
                 function findLayer(layers) {
@@ -1075,8 +1081,9 @@
               } catch(err) { app.echoToOE("ERROR: " + err.message); }
             `;
             frame.contentWindow.postMessage(script, "*");
-          }, 4000); // 4 seconds wait for Photopea to render
+          }, 6000); // Increased to 6 seconds
         } catch (err) {
+          console.error(err);
           showAlert("Error", "File fetch error: " + err.message, "❌");
           resetUI(cardId);
         }
