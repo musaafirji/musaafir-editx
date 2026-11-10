@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Cookie&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- JSZip Library for Bulk Download -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<!-- SUPABASE LIBRARY (YEH MISSING THI) -->
+<!-- SUPABASE LIBRARY -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -196,7 +196,18 @@
   .status-published { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
   .status-draft { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
   
-  #photopea-frame {position: fixed;top: -9999px;left: -9999px;width: 1000px;height: 1000px;border: none;}
+  /* FIXED PHOTOPEA FRAME (Prevents mobile/laptop suspension) */
+  #photopea-frame {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    opacity: 0.01; 
+    z-index: -9999;
+    border: none;
+    pointer-events: none;
+  }
 
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 3000; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.3s; }
   .modal-overlay.active { display: flex; opacity: 1; }
@@ -466,6 +477,7 @@
   const frame = document.getElementById('photopea-frame');
   let isPhotopeaReady = false;
   let pendingGeneration = null;
+  let generationTimeout = null; 
 
   // --- BULK GENERATION VARIABLES ---
   let bulkDesignId = null;
@@ -522,10 +534,8 @@
   // INITIALIZATION
   // ==========================================
   window.addEventListener('DOMContentLoaded', () => {
-    // Start Photopea Engine
     frame.src = "https://www.photopea.com";
     
-    // Load Theme
     try {
       const savedTheme = localStorage.getItem('theme');
       const menuItem = document.getElementById('theme-menu-item');
@@ -538,7 +548,6 @@
       }
     } catch(e) { console.log("Theme init error", e); }
 
-    // Load Data on Initial Page Load
     loadAllData();
   });
 
@@ -555,16 +564,13 @@
   // ==========================================
   async function loadAllData() {
     try {
-      // Fetch Categories
       const { data: catData, error: catErr } = await supabaseClient.from('categories').select('*').order('order');
       if (catErr) throw catErr;
       allCategories = catData || [];
 
-      // Fetch Designs
       const { data: desData, error: desErr } = await supabaseClient.from('designs').select('*').order('order');
       if (desErr) throw desErr;
       
-      // Map DB keys to match frontend expectations
       allDesigns = (desData || []).map(d => ({
         id: d.id,
         name: d.name,
@@ -809,9 +815,6 @@
     loadAllData();
   }
 
-  // ==========================================
-  // FAST DESIGN UPLOAD (Both PSD and Preview to Cloudinary)
-  // ==========================================
   async function saveDesignAdmin() {
     const name = document.getElementById('admin-name').value.trim();
     const categoryId = document.getElementById('admin-category').value;
@@ -828,18 +831,15 @@
     const cloudName = "fujerk60"; 
     const uploadPreset = "test_preset"; 
 
-    // 1. PSD File Upload
     const psdFormData = new FormData();
     psdFormData.append('file', psdFile);
     psdFormData.append('upload_preset', uploadPreset);
 
-    // 2. Preview Image Upload
     const previewFormData = new FormData();
     previewFormData.append('file', previewFile);
     previewFormData.append('upload_preset', uploadPreset);
 
     try {
-        // Dono files ek sath Cloudinary par upload karein (Faster)
         const [psdRes, previewRes] = await Promise.all([
             fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, { method: 'POST', body: psdFormData }),
             fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, { method: 'POST', body: previewFormData })
@@ -857,7 +857,7 @@
             name: name, 
             category_id: categoryId,
             psd_url: psdData.secure_url, 
-            preview_url: previewData.secure_url, // Ab URL save hoga, Base64 nahi
+            preview_url: previewData.secure_url, 
             status: 'published',
             order: maxOrder,
             downloads: 0
@@ -990,7 +990,7 @@
               } catch(err) { app.echoToOE("ERROR: " + err.message); }
             `;
             frame.contentWindow.postMessage(script, "*");
-          }, 2500);
+          }, 4000);
         } catch (err) {
           showAlert("Error", "File fetch error: " + err.message, "❌");
           isBulkGenerating = false;
@@ -1013,8 +1013,6 @@
         
         isBulkGenerating = false;
         document.getElementById('bulkGenerateModal').classList.remove('active');
-        
-        // Sync after bulk is complete
         loadAllData();
         
         showAlert("Bulk Success!", `Successfully generated and downloaded ${bulkQueue.length} images.`, "🎉");
@@ -1041,10 +1039,19 @@
     img.style.filter = 'blur(5px)';
     loader.style.display = 'flex';
 
+    // SAFETY TIMEOUT: 20 seconds
+    clearTimeout(generationTimeout);
+    generationTimeout = setTimeout(() => {
+        showAlert("Timeout", "Generation took too long. Please check your internet connection and try again.", "⏳");
+        resetUI(cardId);
+    }, 20000);
+
     const processPSD = async () => {
         try {
           const response = await fetch(design.psdUrl);
+          if (!response.ok) throw new Error("Network response was not ok");
           const arrayBuffer = await response.arrayBuffer();
+          
           frame.contentWindow.postMessage(arrayBuffer, "*");
           
           setTimeout(() => {
@@ -1068,7 +1075,7 @@
               } catch(err) { app.echoToOE("ERROR: " + err.message); }
             `;
             frame.contentWindow.postMessage(script, "*");
-          }, 2500);
+          }, 4000); // 4 seconds wait for Photopea to render
         } catch (err) {
           showAlert("Error", "File fetch error: " + err.message, "❌");
           resetUI(cardId);
@@ -1082,9 +1089,11 @@
   }
 
   window.addEventListener("message", async function(e) {
-    if (e.data instanceof ArrayBuffer) {
+    if (e.data instanceof ArrayBuffer || e.data instanceof Blob) {
+      clearTimeout(generationTimeout); // Clear timeout on success
+
       if (isBulkGenerating) {
-        const blob = new Blob([e.data], { type: "image/png" });
+        const blob = e.data instanceof Blob ? e.data : new Blob([e.data], { type: "image/png" });
         const currentName = bulkQueue[bulkCurrentIndex];
         bulkZip.file(`${currentName}_${bulkZipFolderName}.png`, blob);
         
@@ -1100,7 +1109,7 @@
           renderStats(); 
         }
 
-        const blob = new Blob([e.data], { type: "image/png" });
+        const blob = e.data instanceof Blob ? e.data : new Blob([e.data], { type: "image/png" });
         const url = URL.createObjectURL(blob);
         
         const a = document.createElement("a");
@@ -1117,6 +1126,7 @@
       }
     } 
     else if (typeof e.data === 'string' && e.data.startsWith("ERROR:")) {
+      clearTimeout(generationTimeout);
       if (isBulkGenerating) {
         showAlert("Bulk Generation Error", `Failed on name "${bulkQueue[bulkCurrentIndex]}": ${e.data}`, "❌");
         isBulkGenerating = false;
