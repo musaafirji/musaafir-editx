@@ -64,23 +64,28 @@
     overflow-x: hidden;
   }
 
-  /* THE MAGIC TRICK - Z-INDEX FIX */
+  /* Photopea Iframe (Default: hidden in background) */
   #photopea-frame {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 1; 
-    opacity: 1 !important; 
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: -1; 
+    opacity: 0.01; /* Thoda visible taake browser block na kare */
     border: none;
     pointer-events: none; 
   }
 
-  /* Website UI jo iframe ke upar bichi hogi */
+  /* Jab generate ho raha ho, iframe ko upar le aao */
+  #photopea-frame.active-generation {
+    z-index: 99998;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Website UI Wrapper */
   #app-wrapper {
     position: relative;
-    z-index: 99; 
+    z-index: 10;
     background-color: var(--bg-color);
     background-image: var(--bg-image); 
     background-attachment: fixed;
@@ -89,6 +94,26 @@
     color: var(--text-main);
     transition: background-color 0.4s, color 0.4s;
     overflow-x: hidden;
+  }
+
+  /* GLOBAL FULL SCREEN LOADER */
+  #global-loader {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(10, 12, 16, 0.85);
+    backdrop-filter: blur(5px);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #8b5cf6;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+  }
+  #global-loader.active {
+    display: flex;
   }
 
   header{padding:15px 20px; background:var(--header-bg); backdrop-filter: blur(15px); border-bottom:1px solid var(--header-border); display:flex;justify-content:center;align-items:center; position:sticky;top:0;z-index:1000;}
@@ -198,10 +223,17 @@
 </head>
 <body>
 
-<!-- IFRAME OUTSIDE WRAPPER, VISIBLE TO BROWSER, BEHIND EVERYTHING -->
+<!-- IFRAME -->
 <iframe id="photopea-frame" src="about:blank"></iframe>
 
-<!-- APP UI WRAPPER (Solid background covering the iframe) -->
+<!-- GLOBAL LOADER (Covers Photopea when active) -->
+<div id="global-loader">
+  <div class="spinner" style="width: 40px; height: 40px; border-width: 4px; margin-bottom: 20px;"></div>
+  <div id="global-loader-text">Warming Up...</div>
+  <div style="font-size: 12px; color: #ccc; margin-top: 5px;">(Please wait)</div>
+</div>
+
+<!-- APP UI WRAPPER -->
 <div id="app-wrapper">
 
   <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
@@ -300,7 +332,6 @@
   <div class="modal-overlay" id="infoModal" onclick="closeModal(event)"><div class="modal-box" style="text-align: left;"><h3 id="infoModalTitle" style="color: #8b5cf6; margin-top: 0;">Title</h3><div id="infoModalBody"></div></div></div>
 
 </div> <!-- END APP WRAPPER -->
-
 <script>
   const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co"; 
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg"; // <-- YAHAN APNI KEY PASTE KAREIN
@@ -308,6 +339,9 @@
 
   let allDesigns = [], allCategories = [], currentDesignId = null, currentCategoryFilter = 'all', editingId = null, editingType = '';
   const frame = document.getElementById('photopea-frame');
+  const globalLoader = document.getElementById('global-loader');
+  const globalLoaderText = document.getElementById('global-loader-text');
+  
   let isPhotopeaReady = false, pendingGeneration = null, generationTimeout = null; 
   let bulkDesignId = null, isBulkGenerating = false, bulkQueue = [], bulkCurrentIndex = 0, bulkZip = null, bulkZipFolderName = "";
 
@@ -333,7 +367,7 @@
     loadAllData();
   });
 
-  // Photopea messages
+  // Photopea Messages
   window.addEventListener("message", async function(e) {
     if (e.data === "done") {
         isPhotopeaReady = true;
@@ -342,11 +376,12 @@
     }
     if (typeof e.data === 'string' && e.data.startsWith("STATUS:")) {
         const statusText = e.data.replace("STATUS:", "").trim();
-        if (currentDesignId) { const loader = document.getElementById(`loader-${currentDesignId}`); if (loader) loader.innerHTML = `<div class="spinner"></div><div>${statusText}</div>`; }
+        globalLoaderText.innerText = statusText;
         return;
     }
     if (typeof e.data === 'string' && e.data.startsWith("ERROR:")) {
         clearTimeout(generationTimeout);
+        hidePhotopea();
         if (isBulkGenerating) { showAlert("Bulk Error", e.data, "❌"); isBulkGenerating = false; } 
         else { showAlert("Photopea Error", e.data, "❌"); if (currentDesignId) resetUI(currentDesignId); }
         return;
@@ -370,6 +405,9 @@
             const a = document.createElement("a"); a.href = url;
             a.download = (currentDesignId ? document.getElementById(`input-${currentDesignId}`).value : 'art') + "_Musaafir.png";
             a.click();
+            
+            hidePhotopea(); // Hide Photopea after success
+            
             if (currentDesignId) {
                 const img = document.querySelector(`#card-${currentDesignId} .img-container img`);
                 if (img) { img.src = url; img.style.opacity = '1'; img.style.filter = 'none'; }
@@ -378,6 +416,17 @@
         }
     }
   });
+
+  function showPhotopea() {
+      frame.classList.add('active-generation');
+      globalLoader.classList.add('active');
+  }
+
+  function hidePhotopea() {
+      frame.classList.remove('active-generation');
+      globalLoader.classList.remove('active');
+      globalLoaderText.innerText = "Warming Up...";
+  }
 
   async function loadAllData() {
     try {
@@ -448,105 +497,129 @@
     const design = allDesigns.find(d => d.id === cardId);
     const text = document.getElementById(`input-${cardId}`).value.trim();
     if (!text) return showAlert("Name Required", "Enter name.", "✍️");
-    const loader = document.getElementById(`loader-${cardId}`); const img = document.querySelector(`#card-${cardId} .img-container img`); const btn = document.getElementById(`btn-${cardId}`);
-    btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Generating...'; img.style.opacity = '0.4'; img.style.filter = 'blur(5px)'; loader.style.display = 'flex'; loader.innerHTML = `<div class="spinner"></div><div>Connecting...</div>`;
+    
+    const btn = document.getElementById(`btn-${cardId}`);
+    btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Generating...';
+    
+    // SHOW PHOTOPEA IN FOREGROUND
+    showPhotopea();
+    globalLoaderText.innerText = "Warming Up...";
 
     clearTimeout(generationTimeout);
-    generationTimeout = setTimeout(() => { showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 120000);
+    generationTimeout = setTimeout(() => { hidePhotopea(); showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 120000); // 2 mins timeout
 
-    const processPSD = () => {
-        loader.innerHTML = `<div class="spinner"></div><div>Downloading PSD...</div>`;
-        const script = `
-          app.echoToOE("STATUS: Downloading...");
-          try {
-            app.open("${design.psdUrl}");
-            var checkCount = 0;
-            var checkInterval = setInterval(function() {
-              checkCount++;
-              if (checkCount > 90) { clearInterval(checkInterval); app.echoToOE("ERROR: File download timeout inside Photopea."); return; }
-              if (app.documents.length > 0 && app.activeDocument && app.activeDocument.width > 0) {
-                clearInterval(checkInterval);
-                app.echoToOE("STATUS: Processing...");
-                try {
-                  var doc = app.activeDocument;
-                  var newText = "${text.replace(/"/g, '\\"')}";
-                  var found = false;
-                  function findLayer(layers) {
-                    for (var i = 0; i < layers.length; i++) {
-                      var l = layers[i];
-                      if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                      else if (l.kind === LayerKind.TEXT) {
-                        if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
-                      }
+    const processPSD = async () => {
+        try {
+          globalLoaderText.innerText = "Downloading PSD...";
+          const response = await fetch(design.psdUrl);
+          const arrayBuffer = await response.arrayBuffer();
+          
+          globalLoaderText.innerText = "Processing...";
+          frame.contentWindow.postMessage(arrayBuffer, "*");
+          
+          setTimeout(() => {
+            const script = `
+              try {
+                var doc = app.activeDocument;
+                if(!doc) throw new Error("No doc loaded");
+                var newText = "${text.replace(/"/g, '\\"')}";
+                var found = false;
+                function findLayer(layers) {
+                  for (var i = 0; i < layers.length; i++) {
+                    var l = layers[i];
+                    if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                    else if (l.kind === LayerKind.TEXT) {
+                      if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
                     }
                   }
-                  findLayer(doc.layers);
-                  if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-                  else doc.saveToOE("png");
-                } catch(err) { app.echoToOE("ERROR: " + err.message); }
-              }
-            }, 1000); 
-          } catch(err) { app.echoToOE("ERROR: " + err.message); }
-        `;
-        frame.contentWindow.postMessage(script, "*");
+                }
+                findLayer(doc.layers);
+                if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
+                else doc.saveToOE("png");
+              } catch(err) { app.echoToOE("ERROR: " + err.message); }
+            `;
+            frame.contentWindow.postMessage(script, "*");
+          }, 4000);
+        } catch (err) {
+          hidePhotopea();
+          showAlert("Error", "File fetch error: " + err.message, "❌");
+          resetUI(cardId);
+        }
     };
 
     if (isPhotopeaReady) processPSD(); 
-    else { loader.innerHTML = `<div class="spinner"></div><div>Warming Up...</div>`; pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
+    else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
   }
 
-  function resetUI(cardId) { const l = document.getElementById(`loader-${cardId}`); const i = document.querySelector(`#card-${cardId} .img-container img`); const b = document.getElementById(`btn-${cardId}`); if (l) { l.style.display = 'none'; l.innerHTML = `<div class="spinner"></div><div>Generating...</div>`; } if (i) { i.style.opacity = '1'; i.style.filter = 'none'; } if (b) { b.disabled = false; b.innerHTML = '✨ Generate & Download'; } }
+  function resetUI(cardId) { const b = document.getElementById(`btn-${cardId}`); if (b) { b.disabled = false; b.innerHTML = '✨ Generate & Download'; } }
 
+  // BULK GENERATION
   function openBulkModal(id) { bulkDesignId = id; document.getElementById('bulkNamesInput').value = ''; document.getElementById('bulkNamesInput').disabled = false; document.getElementById('bulkStartBtn').style.display = 'block'; document.getElementById('bulkCancelBtn').innerText = 'Cancel'; document.getElementById('bulkProgressContainer').style.display = 'none'; document.getElementById('bulkGenerateModal').classList.add('active'); }
-  function closeBulkModal() { if (isBulkGenerating) { showConfirm("Stop?", "Stop?").then(res => { if (res) { isBulkGenerating = false; document.getElementById('bulkGenerateModal').classList.remove('active'); } }); } else { document.getElementById('bulkGenerateModal').classList.remove('active'); } }
+  function closeBulkModal() { if (isBulkGenerating) { showConfirm("Stop?", "Stop?").then(res => { if (res) { isBulkGenerating = false; hidePhotopea(); document.getElementById('bulkGenerateModal').classList.remove('active'); } }); } else { document.getElementById('bulkGenerateModal').classList.remove('active'); } }
+  
   async function startBulkGeneration() {
     const names = document.getElementById('bulkNamesInput').value.split('\n').map(n => n.trim()).filter(n => n !== '');
     if (names.length === 0) return showAlert("Error", "Enter names.", "⚠️"); if (names.length > 20) return showAlert("Limit", "Max 20.", "⚠️");
     const design = allDesigns.find(d => d.id === bulkDesignId); if (!design) return;
+    
     isBulkGenerating = true; bulkQueue = names; bulkCurrentIndex = 0; bulkZip = new JSZip(); bulkZipFolderName = design.name.replace(/[^a-z0-9]/gi, '_') + "_Bulk";
-    document.getElementById('bulkNamesInput').disabled = true; document.getElementById('bulkStartBtn').style.display = 'none'; document.getElementById('bulkCancelBtn').innerText = 'Stop'; document.getElementById('bulkProgressContainer').style.display = 'block'; updateBulkProgress(); processNextBulkName(design);
+    document.getElementById('bulkNamesInput').disabled = true; document.getElementById('bulkStartBtn').style.display = 'none'; document.getElementById('bulkCancelBtn').innerText = 'Stop'; document.getElementById('bulkProgressContainer').style.display = 'block'; updateBulkProgress(); 
+    
+    showPhotopea();
+    globalLoaderText.innerText = "Starting Bulk...";
+    processNextBulkName(design);
   }
+  
   function updateBulkProgress() { document.getElementById('bulkProgressText').innerText = `Generating ${bulkCurrentIndex + 1} of ${bulkQueue.length}...`; document.getElementById('bulkProgressBar').style.width = ((bulkCurrentIndex / bulkQueue.length) * 100) + '%'; }
+  
   async function processNextBulkName(design) {
     if (!isBulkGenerating || bulkCurrentIndex >= bulkQueue.length) { if (isBulkGenerating) finishBulkGeneration(); return; }
     updateBulkProgress(); const text = bulkQueue[bulkCurrentIndex];
-    const processPSD = () => {
-        const script = `
-          try {
-            app.open("${design.psdUrl}");
-            var checkCount = 0;
-            var checkInterval = setInterval(function() {
-              checkCount++;
-              if (checkCount > 90) { clearInterval(checkInterval); app.echoToOE("ERROR: Download timeout."); return; }
-              if (app.documents.length > 0 && app.activeDocument && app.activeDocument.width > 0) {
-                clearInterval(checkInterval);
-                try {
-                  var doc = app.activeDocument;
-                  var newText = "${text.replace(/"/g, '\\"')}";
-                  var found = false;
-                  function findLayer(layers) {
-                    for (var i = 0; i < layers.length; i++) {
-                      var l = layers[i];
-                      if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                      else if (l.kind === LayerKind.TEXT) {
-                        if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
-                      }
+    
+    globalLoaderText.innerText = `Bulk: ${bulkCurrentIndex + 1} of ${bulkQueue.length}`;
+
+    const processPSD = async () => {
+        try {
+          const response = await fetch(design.psdUrl);
+          const arrayBuffer = await response.arrayBuffer();
+          frame.contentWindow.postMessage(arrayBuffer, "*");
+          
+          setTimeout(() => {
+            const script = `
+              try {
+                var doc = app.activeDocument;
+                var newText = "${text.replace(/"/g, '\\"')}";
+                var found = false;
+                function findLayer(layers) {
+                  for (var i = 0; i < layers.length; i++) {
+                    var l = layers[i];
+                    if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                    else if (l.kind === LayerKind.TEXT) {
+                      if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
                     }
                   }
-                  findLayer(doc.layers);
-                  if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-                  else doc.saveToOE("png");
-                } catch(err) { app.echoToOE("ERROR: " + err.message); }
-              }
-            }, 1000);
-          } catch(err) { app.echoToOE("ERROR: " + err.message); }
-        `;
-        frame.contentWindow.postMessage(script, "*");
+                }
+                findLayer(doc.layers);
+                if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
+                else doc.saveToOE("png");
+              } catch(err) { app.echoToOE("ERROR: " + err.message); }
+            `;
+            frame.contentWindow.postMessage(script, "*");
+          }, 4000);
+        } catch (err) { hidePhotopea(); showAlert("Error", "Fetch error: " + err.message, "❌"); isBulkGenerating = false; }
     };
     if (isPhotopeaReady) processPSD(); else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
   }
-  async function finishBulkGeneration() { document.getElementById('bulkProgressText').innerText = "Zipping..."; document.getElementById('bulkProgressBar').style.width = '100%'; bulkZip.generateAsync({type:"blob"}).then(async function(content) { const a = document.createElement("a"); a.href = URL.createObjectURL(content); a.download = bulkZipFolderName + ".zip"; a.click(); URL.revokeObjectURL(a.href); isBulkGenerating = false; document.getElementById('bulkGenerateModal').classList.remove('active'); loadAllData(); showAlert("Success!", "Downloaded.", "🎉"); }); }
+  
+  async function finishBulkGeneration() { 
+    document.getElementById('bulkProgressText').innerText = "Zipping..."; document.getElementById('bulkProgressBar').style.width = '100%'; 
+    bulkZip.generateAsync({type:"blob"}).then(async function(content) { 
+        const a = document.createElement("a"); a.href = URL.createObjectURL(content); a.download = bulkZipFolderName + ".zip"; a.click(); URL.revokeObjectURL(a.href); 
+        isBulkGenerating = false; hidePhotopea(); document.getElementById('bulkGenerateModal').classList.remove('active'); loadAllData(); showAlert("Success!", "Downloaded.", "🎉"); 
+    }); 
+  }
 
+  // --- UI NAVIGATION ---
   function toggleMenu() { document.getElementById('dropdownMenu').classList.toggle('active'); document.getElementById('menuOverlay').classList.toggle('active'); }
   function openGuide() { document.getElementById('infoModalTitle').innerHTML = "📖 Guide"; document.getElementById('infoModalBody').innerHTML = `<ul><li><b>Step 1:</b> Choose design.</li><li><b>Step 2:</b> Type name.</li><li><b>Step 3:</b> Click Generate.</li><li><b>Step 4:</b> Image downloads.</li></ul>`; document.getElementById('infoModal').classList.add('active'); }
   function openContact() { hideAllViews(); document.getElementById('contact-page').style.display = 'block'; }
@@ -554,6 +627,7 @@
   function closeSubPage(pageId) { document.getElementById(pageId).style.display = 'none'; document.getElementById('user-view').style.display = 'block'; }
   function hideAllViews() { document.getElementById('user-view').style.display = 'none'; document.getElementById('contact-page').style.display = 'none'; document.getElementById('about-page').style.display = 'none'; document.getElementById('admin-view').style.display = 'none'; }
   function closeModal(e) { if (e.target.classList.contains('modal-overlay')) { e.target.classList.remove('active'); } }
+  
   let isAdmin = false;
   function toggleView() { isAdmin = !isAdmin; hideAllViews(); if (isAdmin) { document.getElementById('admin-view').style.display = 'block'; loadAllData(); } else { document.getElementById('user-view').style.display = 'block'; } }
   function switchTab(tabName, el) { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.panel').forEach(p => p.classList.remove('active')); if(el) el.classList.add('active'); document.getElementById('panel-' + tabName).classList.add('active'); }
