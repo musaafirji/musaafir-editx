@@ -331,7 +331,6 @@
 </div> 
 
 <script>
-  // Aapki di hui Sahi URL aur Key yahan fix kar di gayi hain
   const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co"; 
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg"; 
   
@@ -359,7 +358,7 @@
   function toggleTheme() { const wrapper = document.getElementById('app-wrapper'); const body = document.body; const menuItem = document.getElementById('theme-menu-item'); wrapper.classList.toggle('light-theme'); body.classList.toggle('light-theme'); if (wrapper.classList.contains('light-theme')) { menuItem.innerHTML = '🌙 Switch to Dark Theme'; localStorage.setItem('theme', 'light'); } else { menuItem.innerHTML = '☀️ Switch to Light Theme'; localStorage.setItem('theme', 'dark'); } }
 
   window.addEventListener('DOMContentLoaded', () => {
-    // API initialization fix
+    // API mode active
     frame.src = "https://www.photopea.com#%7B%7D";
     try {
       const savedTheme = localStorage.getItem('theme'); const menuItem = document.getElementById('theme-menu-item');
@@ -493,7 +492,7 @@
   async function deleteDesign(id) { if (!await showConfirm("Delete", "Sure?")) return; await supabaseClient.from('designs').delete().eq('id', id); if (currentDesignId === id) currentDesignId = null; loadAllData(); }
   async function saveSettingsAdmin() { await supabaseClient.from('settings').upsert([{ key: "fb", value: document.getElementById('setting-fb').value }, { key: "wa", value: document.getElementById('setting-wa').value }, { key: 'email', value: document.getElementById('setting-email').value }]); showAlert("Saved", "Links updated.", "✅"); loadSettings(); }
 
-  // --- UPDATED MAIN GENERATION LOGIC ---
+  // --- 100% FIXED GENERATION LOGIC ---
   async function generateImage(cardId) {
     const design = allDesigns.find(d => d.id === cardId);
     const text = document.getElementById(`input-${cardId}`).value.trim();
@@ -515,38 +514,36 @@
 
         const scriptCode = `
           try {
-            if (app.documents.length === 0) {
-              app.echoToOE("ERROR: Document load nahi hua. Please try again.");
-            } else {
-              var doc = app.activeDocument;
-              var newText = "${safeText}";
-              var found = false;
-              function findLayer(layers) {
-                for (var i = 0; i < layers.length; i++) {
-                  var l = layers[i];
-                  if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                  else if (l.kind === LayerKind.TEXT) {
-                    if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
-                  }
+            try { while(app.documents.length > 0) { app.documents[0].close(); } } catch(e){}
+            app.echoToOE("STATUS: Loading file...");
+            app.open("${design.psdUrl}");
+            var doc = app.activeDocument;
+            var newText = "${safeText}";
+            var found = false;
+            function findLayer(layers) {
+              for (var i = 0; i < layers.length; i++) {
+                var l = layers[i];
+                if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                else if (l.kind === LayerKind.TEXT) {
+                  if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
                 }
               }
-              findLayer(doc.layers);
-              if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-              else doc.saveToOE("png");
+            }
+            app.echoToOE("STATUS: Applying text...");
+            findLayer(doc.layers);
+            if (!found) {
+                app.echoToOE("ERROR: 'NAME' layer not found.");
+            } else {
+                app.echoToOE("STATUS: Saving Image...");
+                doc.saveToOE("png");
             }
           } catch(err) { app.echoToOE("ERROR: " + err.message); }
         `;
 
-        const payload = {
-            files: [ design.psdUrl ],
-            script: scriptCode
-        };
-        
-        // CHANGE 1: Added JSON.stringify
-        frame.contentWindow.postMessage(JSON.stringify(payload), "*");
+        // Send pure script string directly to execute it synchronously
+        frame.contentWindow.postMessage(scriptCode, "*");
     };
 
-    // CHANGE 2: Safe processPSD call
     if (isPhotopeaReady) processPSD(); 
     else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
   }
@@ -571,7 +568,7 @@
   
   function updateBulkProgress() { document.getElementById('bulkProgressText').innerText = `Generating ${bulkCurrentIndex + 1} of ${bulkQueue.length}...`; document.getElementById('bulkProgressBar').style.width = ((bulkCurrentIndex / bulkQueue.length) * 100) + '%'; }
   
-  // --- UPDATED BULK GENERATION LOGIC ---
+  // --- 100% FIXED BULK GENERATION LOGIC ---
   async function processNextBulkName(design) {
     if (!isBulkGenerating || bulkCurrentIndex >= bulkQueue.length) { if (isBulkGenerating) finishBulkGeneration(); return; }
     updateBulkProgress(); const text = bulkQueue[bulkCurrentIndex];
@@ -583,38 +580,32 @@
 
         const scriptCode = `
           try {
-            if (app.documents.length === 0) {
-              app.echoToOE("ERROR: Document load nahi hua.");
-            } else {
-              var doc = app.activeDocument;
-              var newText = "${safeText}";
-              var found = false;
-              function findLayer(layers) {
-                for (var i = 0; i < layers.length; i++) {
-                  var l = layers[i];
-                  if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                  else if (l.kind === LayerKind.TEXT) {
-                    if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
-                  }
+            try { while(app.documents.length > 0) { app.documents[0].close(); } } catch(e){}
+            app.open("${design.psdUrl}");
+            var doc = app.activeDocument;
+            var newText = "${safeText}";
+            var found = false;
+            function findLayer(layers) {
+              for (var i = 0; i < layers.length; i++) {
+                var l = layers[i];
+                if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                else if (l.kind === LayerKind.TEXT) {
+                  if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
                 }
               }
-              findLayer(doc.layers);
-              if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-              else doc.saveToOE("png");
+            }
+            findLayer(doc.layers);
+            if (!found) {
+                app.echoToOE("ERROR: 'NAME' layer not found.");
+            } else {
+                doc.saveToOE("png");
             }
           } catch(err) { app.echoToOE("ERROR: " + err.message); }
         `;
 
-        const payload = {
-            files: [ design.psdUrl ],
-            script: scriptCode
-        };
-        
-        // CHANGE 3: Added JSON.stringify
-        frame.contentWindow.postMessage(JSON.stringify(payload), "*");
+        frame.contentWindow.postMessage(scriptCode, "*");
     };
 
-    // CHANGE 4: Safe processPSD call
     if (isPhotopeaReady) processPSD(); 
     else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
   }
