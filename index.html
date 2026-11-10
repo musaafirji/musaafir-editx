@@ -342,7 +342,7 @@
   const globalLoader = document.getElementById('global-loader');
   const globalLoaderText = document.getElementById('global-loader-text');
   
-  let isPhotopeaReady = false, pendingGeneration = null, generationTimeout = null; 
+  let isPhotopeaReady = false; 
   let bulkDesignId = null, isBulkGenerating = false, bulkQueue = [], bulkCurrentIndex = 0, bulkZip = null, bulkZipFolderName = "";
 
   function showAlert(title, msg, icon = "✅") { document.getElementById('alertTitle').innerText = title; document.getElementById('alertMsg').innerText = msg; document.getElementById('alertIcon').innerText = icon; document.getElementById('customAlertModal').classList.add('active'); }
@@ -367,67 +367,170 @@
     loadAllData();
   });
 
-  // Photopea Messages
-  window.addEventListener("message", async function(e) {
+  // Photopea communication: wait for the real ready signal and correlate each job.
+  let photopeaReady = false;
+  let photopeaReadyWaiters = [];
+  let activePhotopeaJob = null;
+  const PHOTOPEA_ORIGIN = "https://www.photopea.com";
+
+  window.addEventListener("message", function(e) {
+    if (e.source !== frame.contentWindow) return;
+    if (e.origin && e.origin !== PHOTOPEA_ORIGIN) return;
+
     if (e.data === "done") {
-        isPhotopeaReady = true;
-        if (pendingGeneration) { pendingGeneration(); pendingGeneration = null; }
-        return;
+      photopeaReady = true;
+      isPhotopeaReady = true;
+      photopeaReadyWaiters.splice(0).forEach(resolve => resolve());
+      return;
     }
-    if (typeof e.data === 'string' && e.data.startsWith("STATUS:")) {
-        const statusText = e.data.replace("STATUS:", "").trim();
-        globalLoaderText.innerText = statusText;
-        return;
+
+    if (typeof e.data === "string" && e.data === "MUSAAFIR_READY_TO_OPEN") {
+      if (activePhotopeaJob && activePhotopeaJob.onReadyToOpen) {
+        activePhotopeaJob.onReadyToOpen();
+      }
+      return;
     }
-    if (typeof e.data === 'string' && e.data.startsWith("ERROR:")) {
-        clearTimeout(generationTimeout);
-        hidePhotopea();
-        if (isBulkGenerating) { showAlert("Bulk Error", e.data, "❌"); isBulkGenerating = false; } 
-        else { showAlert("Photopea Error", e.data, "❌"); if (currentDesignId) resetUI(currentDesignId); }
-        return;
+
+    if (typeof e.data === "string" && e.data.startsWith("STATUS:")) {
+      globalLoaderText.innerText = e.data.slice(7).trim();
+      return;
     }
+
+    if (typeof e.data === "string" && e.data.startsWith("ERROR:")) {
+      if (activePhotopeaJob) activePhotopeaJob.reject(new Error(e.data));
+      return;
+    }
+
     if (e.data instanceof ArrayBuffer || e.data instanceof Blob) {
-        clearTimeout(generationTimeout);
-        if (isBulkGenerating) {
-            const blob = e.data instanceof Blob ? e.data : new Blob([e.data], { type: "image/png" });
-            bulkZip.file(`${bulkQueue[bulkCurrentIndex]}_${bulkZipFolderName}.png`, blob);
-            const design = allDesigns.find(d => d.id === bulkDesignId);
-            await supabaseClient.from('designs').update({ downloads: (design.downloads || 0) + 1 }).eq('id', bulkDesignId);
-            bulkCurrentIndex++; processNextBulkName(design);
-        } else {
-            if (currentDesignId) {
-                const design = allDesigns.find(d => d.id === currentDesignId);
-                await supabaseClient.from('designs').update({ downloads: (design.downloads || 0) + 1 }).eq('id', currentDesignId);
-                renderStats(); 
-            }
-            const blob = e.data instanceof Blob ? e.data : new Blob([e.data], { type: "image/png" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a"); a.href = url;
-            a.download = (currentDesignId ? document.getElementById(`input-${currentDesignId}`).value : 'art') + "_Musaafir.png";
-            a.click();
-            
-            hidePhotopea(); // Hide Photopea after success
-            
-            if (currentDesignId) {
-                const img = document.querySelector(`#card-${currentDesignId} .img-container img`);
-                if (img) { img.src = url; img.style.opacity = '1'; img.style.filter = 'none'; }
-                resetUI(currentDesignId);
-            }
-        }
+      if (activePhotopeaJob) activePhotopeaJob.resolve(e.data);
     }
   });
 
+  function waitForPhotopeaReady(timeoutMs = 60000) {
+    if (photopeaReady) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        photopeaReadyWaiters = photopeaReadyWaiters.filter(fn => fn !== onReady);
+        reject(new Error("Photopea did not become ready within 60 seconds. Please refresh and try again."));
+      }, timeoutMs);
+      function onReady() {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve();
+      }
+      photopeaReadyWaiters.push(onReady);
+    });
+  }
+
   function showPhotopea() {
-      frame.classList.add('active-generation');
-      globalLoader.classList.add('active');
+    frame.classList.add('active-generation');
+    globalLoader.classList.add('active');
   }
 
   function hidePhotopea() {
-      frame.classList.remove('active-generation');
-      globalLoader.classList.remove('active');
-      globalLoaderText.innerText = "Warming Up...";
+    frame.classList.remove('active-generation');
+    globalLoader.classList.remove('active');
+    globalLoaderText.innerText = "Warming Up...";
   }
 
+  async function runPhotopeaJob(psdUrl, nameText) {
+    if (activePhotopeaJob) throw new Error("Another generation is already running. Please wait.");
+    await waitForPhotopeaReady();
+
+    globalLoaderText.innerText = "Downloading PSD...";
+    const fetchController = new AbortController();
+    const fetchTimer = setTimeout(() => fetchController.abort(), 45000);
+    let response;
+    try {
+      response = await fetch(psdUrl, { cache: "no-store", signal: fetchController.signal });
+    } catch (fetchError) {
+      if (fetchError.name === "AbortError") throw new Error("PSD download took longer than 45 seconds. Check your internet connection and PSD hosting.");
+      throw new Error("PSD download failed. The file host may be blocking cross-origin access (CORS): " + fetchError.message);
+    } finally { clearTimeout(fetchTimer); }
+    if (!response.ok) throw new Error(`PSD download failed (HTTP ${response.status}). Check the PSD URL and its hosting permissions.`);
+    const arrayBuffer = await response.arrayBuffer();
+    if (!arrayBuffer || arrayBuffer.byteLength < 4) throw new Error("The downloaded PSD file is empty or invalid.");
+
+    globalLoaderText.innerText = "Preparing Photopea...";
+    const outputPromise = new Promise((resolve, reject) => {
+      const job = {
+        resolve: value => { if (activePhotopeaJob === job) activePhotopeaJob = null; resolve(value); },
+        reject: error => { if (activePhotopeaJob === job) activePhotopeaJob = null; reject(error); },
+        onReadyToOpen: null
+      };
+      activePhotopeaJob = job;
+      job.onReadyToOpen = () => {
+        globalLoaderText.innerText = "Opening PSD...";
+        // Photopea has acknowledged that the old document(s) are closed.
+        frame.contentWindow.postMessage(arrayBuffer, PHOTOPEA_ORIGIN);
+        globalLoaderText.innerText = "Processing...";
+        const safeName = JSON.stringify(nameText);
+        const script = `
+          var waitCount = 0;
+          function musaafirProcessPSD() {
+            waitCount++;
+            if (!app.documents || app.documents.length === 0 || !app.activeDocument || !app.activeDocument.layers || app.activeDocument.layers.length === 0) {
+              if (waitCount > 100) { app.echoToOE("ERROR: PSD did not finish opening within 100 seconds."); return; }
+              setTimeout(musaafirProcessPSD, 1000);
+              return;
+            }
+            try {
+              var doc = app.activeDocument;
+              var newText = ${safeName};
+              var found = false;
+              function findNameLayer(layers) {
+                for (var i = 0; i < layers.length; i++) {
+                  var layer = layers[i];
+                  if (layer.typename === "LayerSet") findNameLayer(layer.layers);
+                  else if (layer.kind === LayerKind.TEXT && String(layer.name).trim().toUpperCase() === "NAME") {
+                    layer.textItem.contents = newText;
+                    found = true;
+                  }
+                }
+              }
+              findNameLayer(doc.layers);
+              if (!found) app.echoToOE("ERROR: Text layer named NAME was not found in this PSD.");
+              else doc.saveToOE("png");
+            } catch (err) { app.echoToOE("ERROR: " + err.message); }
+          }
+          musaafirProcessPSD();
+        `;
+        frame.contentWindow.postMessage(script, PHOTOPEA_ORIGIN);
+      };
+    });
+
+    // Set up a clean document state before sending the next PSD. Acknowledgement
+    // prevents the previous design from being mistaken for the newly opened file.
+    const closeScript = `
+      try {
+        while (app.documents && app.documents.length > 0) app.activeDocument.close(SaveOptions.DONOTSAVECHANGES);
+        app.echoToOE("MUSAAFIR_READY_TO_OPEN");
+      } catch (err) { app.echoToOE("ERROR: Could not prepare Photopea: " + err.message); }
+    `;
+    frame.contentWindow.postMessage(closeScript, PHOTOPEA_ORIGIN);
+
+    let timeoutId;
+    try {
+      return await Promise.race([
+        outputPromise,
+        new Promise((_, reject) => { timeoutId = setTimeout(() => reject(new Error("Generation timed out. Photopea did not return the PNG. Check the PSD and NAME text layer.")), 145000); })
+      ]);
+    } finally {
+      clearTimeout(timeoutId);
+      // If the job timed out without Photopea replying, reset the editor so a
+      // delayed export from the old job cannot be mistaken for the next one.
+      if (activePhotopeaJob) {
+        activePhotopeaJob = null;
+        photopeaReady = false;
+        isPhotopeaReady = false;
+        frame.src = PHOTOPEA_ORIGIN;
+      }
+    }
+  }
   async function loadAllData() {
     try {
       const { data: catData, error: catErr } = await supabaseClient.from('categories').select('*').order('order'); if (catErr) throw catErr; allCategories = catData || [];
@@ -493,153 +596,138 @@
   async function deleteDesign(id) { if (!await showConfirm("Delete", "Sure?")) return; await supabaseClient.from('designs').delete().eq('id', id); if (currentDesignId === id) currentDesignId = null; loadAllData(); }
   async function saveSettingsAdmin() { await supabaseClient.from('settings').upsert([{ key: "fb", value: document.getElementById('setting-fb').value }, { key: "wa", value: document.getElementById('setting-wa').value }, { key: 'email', value: document.getElementById('setting-email').value }]); showAlert("Saved", "Links updated.", "✅"); loadSettings(); }
 
-  // --- MAIN GENERATION LOGIC WITH SMART WAIT ---
+  // --- SINGLE NAME GENERATION ---
   async function generateImage(cardId) {
     const design = allDesigns.find(d => d.id === cardId);
-    const text = document.getElementById(`input-${cardId}`).value.trim();
+    const input = document.getElementById(`input-${cardId}`);
+    const text = input ? input.value.trim() : "";
+    if (!design) return showAlert("Design Missing", "Please refresh the page and select the design again.", "❌");
     if (!text) return showAlert("Name Required", "Enter name.", "✍️");
-    
+    if (activePhotopeaJob) return showAlert("Please Wait", "Another image is currently being generated.", "⏳");
+
+    currentDesignId = cardId;
     const btn = document.getElementById(`btn-${cardId}`);
-    btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Generating...';
-    
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Generating...'; }
     showPhotopea();
-    globalLoaderText.innerText = "Warming Up...";
+    globalLoaderText.innerText = photopeaReady ? "Downloading PSD..." : "Warming Up Photopea...";
 
-    clearTimeout(generationTimeout);
-    generationTimeout = setTimeout(() => { hidePhotopea(); showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 150000); // 2.5 mins timeout
+    try {
+      const result = await runPhotopeaJob(design.psdUrl, text);
+      const blob = result instanceof Blob ? result : new Blob([result], { type: "image/png" });
+      if (!blob.size) throw new Error("Photopea returned an empty image.");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${text.replace(/[\\/:*?"<>|]/g, "_")}_Musaafir.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
 
-    const processPSD = async () => {
-        try {
-          globalLoaderText.innerText = "Downloading PSD...";
-          const response = await fetch(design.psdUrl);
-          const arrayBuffer = await response.arrayBuffer();
-          
-          globalLoaderText.innerText = "Processing...";
-          frame.contentWindow.postMessage(arrayBuffer, "*");
-          
-          // Send a Smart Polling Script to Photopea
-          const script = `
-            var maxWait = 120; // 120 seconds max wait
-            var wait = 0;
-            function doWork() {
-              wait++;
-              if (wait > maxWait) {
-                app.echoToOE("ERROR: PSD file took too long to load.");
-                return;
-              }
-              // Check if document is fully loaded
-              if (!app.documents || app.documents.length === 0 || !app.activeDocument || !app.activeDocument.layers || app.activeDocument.layers.length === 0) {
-                setTimeout(doWork, 1000); // Wait 1s and check again
-                return;
-              }
-              
-              try {
-                var doc = app.activeDocument;
-                var newText = "${text.replace(/"/g, '\\"')}";
-                var found = false;
-                function findLayer(layers) {
-                  for (var i = 0; i < layers.length; i++) {
-                    var l = layers[i];
-                    if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                    else if (l.kind === LayerKind.TEXT) {
-                      if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
-                    }
-                  }
-                }
-                findLayer(doc.layers);
-                if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-                else doc.saveToOE("png");
-              } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            }
-            doWork();
-          `;
-          frame.contentWindow.postMessage(script, "*");
-          
-        } catch (err) {
-          hidePhotopea();
-          showAlert("Error", "File fetch error: " + err.message, "❌");
-          resetUI(cardId);
-        }
-    };
-
-    if (isPhotopeaReady) processPSD(); 
-    else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
+      const { error } = await supabaseClient.from('designs').update({ downloads: (design.downloads || 0) + 1 }).eq('id', cardId);
+      if (error) console.warn("Download count could not be updated:", error.message);
+      design.downloads = (design.downloads || 0) + 1;
+      renderStats();
+      const img = document.querySelector(`#card-${cardId} .img-container img`);
+      if (img) { img.src = url; img.style.opacity = '1'; img.style.filter = 'none'; }
+    } catch (err) {
+      console.error("Name generation failed:", err);
+      showAlert("Generation Failed", err.message || "Unknown error. Please try again.", "❌");
+    } finally {
+      hidePhotopea();
+      resetUI(cardId);
+    }
   }
 
-  function resetUI(cardId) { const b = document.getElementById(`btn-${cardId}`); if (b) { b.disabled = false; b.innerHTML = '✨ Generate & Download'; } }
+  function resetUI(cardId) {
+    const b = document.getElementById(`btn-${cardId}`);
+    if (b) { b.disabled = false; b.innerHTML = '✨ Generate & Download'; }
+  }
 
   // BULK GENERATION
   function openBulkModal(id) { bulkDesignId = id; document.getElementById('bulkNamesInput').value = ''; document.getElementById('bulkNamesInput').disabled = false; document.getElementById('bulkStartBtn').style.display = 'block'; document.getElementById('bulkCancelBtn').innerText = 'Cancel'; document.getElementById('bulkProgressContainer').style.display = 'none'; document.getElementById('bulkGenerateModal').classList.add('active'); }
-  function closeBulkModal() { if (isBulkGenerating) { showConfirm("Stop?", "Stop?").then(res => { if (res) { isBulkGenerating = false; hidePhotopea(); document.getElementById('bulkGenerateModal').classList.remove('active'); } }); } else { document.getElementById('bulkGenerateModal').classList.remove('active'); } }
+  function closeBulkModal() {
+    if (isBulkGenerating) {
+      showConfirm("Stop?", "Stop after the current image finishes?").then(res => {
+        if (res) { isBulkGenerating = false; document.getElementById('bulkCancelBtn').innerText = 'Stopping...'; }
+      });
+    } else document.getElementById('bulkGenerateModal').classList.remove('active');
+  }
   
   async function startBulkGeneration() {
     const names = document.getElementById('bulkNamesInput').value.split('\n').map(n => n.trim()).filter(n => n !== '');
-    if (names.length === 0) return showAlert("Error", "Enter names.", "⚠️"); if (names.length > 20) return showAlert("Limit", "Max 20.", "⚠️");
-    const design = allDesigns.find(d => d.id === bulkDesignId); if (!design) return;
-    
-    isBulkGenerating = true; bulkQueue = names; bulkCurrentIndex = 0; bulkZip = new JSZip(); bulkZipFolderName = design.name.replace(/[^a-z0-9]/gi, '_') + "_Bulk";
-    document.getElementById('bulkNamesInput').disabled = true; document.getElementById('bulkStartBtn').style.display = 'none'; document.getElementById('bulkCancelBtn').innerText = 'Stop'; document.getElementById('bulkProgressContainer').style.display = 'block'; updateBulkProgress(); 
-    
-    showPhotopea();
-    globalLoaderText.innerText = "Starting Bulk...";
-    processNextBulkName(design);
-  }
-  
-  function updateBulkProgress() { document.getElementById('bulkProgressText').innerText = `Generating ${bulkCurrentIndex + 1} of ${bulkQueue.length}...`; document.getElementById('bulkProgressBar').style.width = ((bulkCurrentIndex / bulkQueue.length) * 100) + '%'; }
-  
-  async function processNextBulkName(design) {
-    if (!isBulkGenerating || bulkCurrentIndex >= bulkQueue.length) { if (isBulkGenerating) finishBulkGeneration(); return; }
-    updateBulkProgress(); const text = bulkQueue[bulkCurrentIndex];
-    
-    globalLoaderText.innerText = `Bulk: ${bulkCurrentIndex + 1} of ${bulkQueue.length}`;
+    if (names.length === 0) return showAlert("Error", "Enter names.", "⚠️");
+    if (names.length > 20) return showAlert("Limit", "Max 20.", "⚠️");
+    const design = allDesigns.find(d => d.id === bulkDesignId);
+    if (!design) return showAlert("Error", "Design not found. Refresh and try again.", "❌");
 
-    const processPSD = async () => {
-        try {
-          const response = await fetch(design.psdUrl);
-          const arrayBuffer = await response.arrayBuffer();
-          frame.contentWindow.postMessage(arrayBuffer, "*");
-          
-          const script = `
-            var maxWait = 120;
-            var wait = 0;
-            function doWork() {
-              wait++;
-              if (wait > maxWait) { app.echoToOE("ERROR: PSD load timeout."); return; }
-              if (!app.documents || app.documents.length === 0 || !app.activeDocument || !app.activeDocument.layers || app.activeDocument.layers.length === 0) {
-                setTimeout(doWork, 1000); return;
-              }
-              try {
-                var doc = app.activeDocument;
-                var newText = "${text.replace(/"/g, '\\"')}";
-                var found = false;
-                function findLayer(layers) {
-                  for (var i = 0; i < layers.length; i++) {
-                    var l = layers[i];
-                    if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                    else if (l.kind === LayerKind.TEXT) {
-                      if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
-                    }
-                  }
-                }
-                findLayer(doc.layers);
-                if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-                else doc.saveToOE("png");
-              } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            }
-            doWork();
-          `;
-          frame.contentWindow.postMessage(script, "*");
-        } catch (err) { hidePhotopea(); showAlert("Error", "Fetch error: " + err.message, "❌"); isBulkGenerating = false; }
-    };
-    if (isPhotopeaReady) processPSD(); else { pendingGeneration = processPSD; setTimeout(() => { if(!isPhotopeaReady){ isPhotopeaReady = true; pendingGeneration(); pendingGeneration=null; } }, 8000); }
+    isBulkGenerating = true;
+    bulkQueue = names;
+    bulkCurrentIndex = 0;
+    bulkZip = new JSZip();
+    bulkZipFolderName = design.name.replace(/[^a-z0-9]/gi, '_') + "_Bulk";
+    document.getElementById('bulkNamesInput').disabled = true;
+    document.getElementById('bulkStartBtn').style.display = 'none';
+    document.getElementById('bulkCancelBtn').innerText = 'Stop';
+    document.getElementById('bulkProgressContainer').style.display = 'block';
+    updateBulkProgress();
+    showPhotopea();
+    try {
+      await waitForPhotopeaReady();
+      await processNextBulkName(design);
+    } catch (err) {
+      console.error("Bulk generation failed:", err);
+      showAlert("Bulk Error", err.message || "Bulk generation failed.", "❌");
+      isBulkGenerating = false;
+      hidePhotopea();
+      document.getElementById('bulkNamesInput').disabled = false;
+      document.getElementById('bulkStartBtn').style.display = 'block';
+    }
   }
-  
-  async function finishBulkGeneration() { 
-    document.getElementById('bulkProgressText').innerText = "Zipping..."; document.getElementById('bulkProgressBar').style.width = '100%'; 
-    bulkZip.generateAsync({type:"blob"}).then(async function(content) { 
-        const a = document.createElement("a"); a.href = URL.createObjectURL(content); a.download = bulkZipFolderName + ".zip"; a.click(); URL.revokeObjectURL(a.href); 
-        isBulkGenerating = false; hidePhotopea(); document.getElementById('bulkGenerateModal').classList.remove('active'); loadAllData(); showAlert("Success!", "Downloaded.", "🎉"); 
-    }); 
+
+  function updateBulkProgress() {
+    document.getElementById('bulkProgressText').innerText = `Generating ${Math.min(bulkCurrentIndex + 1, bulkQueue.length)} of ${bulkQueue.length}...`;
+    document.getElementById('bulkProgressBar').style.width = ((bulkCurrentIndex / bulkQueue.length) * 100) + '%';
+  }
+
+  async function processNextBulkName(design) {
+    while (isBulkGenerating && bulkCurrentIndex < bulkQueue.length) {
+      const text = bulkQueue[bulkCurrentIndex];
+      updateBulkProgress();
+      globalLoaderText.innerText = `Bulk: ${bulkCurrentIndex + 1} of ${bulkQueue.length} — ${text}`;
+      const result = await runPhotopeaJob(design.psdUrl, text);
+      const blob = result instanceof Blob ? result : new Blob([result], { type: "image/png" });
+      if (!blob.size) throw new Error(`Photopea returned an empty PNG for ${text}.`);
+      const safeFileName = text.replace(/[\\/:*?"<>|]/g, "_");
+      bulkZip.file(`${String(bulkCurrentIndex + 1).padStart(2, '0')}_${safeFileName}.png`, blob);
+      const { error } = await supabaseClient.from('designs').update({ downloads: (design.downloads || 0) + 1 }).eq('id', bulkDesignId);
+      if (error) console.warn("Bulk download count update failed:", error.message);
+      design.downloads = (design.downloads || 0) + 1;
+      bulkCurrentIndex++;
+    }
+    if (isBulkGenerating && bulkCurrentIndex >= bulkQueue.length) await finishBulkGeneration();
+    else {
+      hidePhotopea();
+      document.getElementById('bulkNamesInput').disabled = false;
+      document.getElementById('bulkStartBtn').style.display = 'block';
+      document.getElementById('bulkGenerateModal').classList.remove('active');
+    }
+  }
+
+  async function finishBulkGeneration() {
+    document.getElementById('bulkProgressText').innerText = "Creating ZIP file...";
+    document.getElementById('bulkProgressBar').style.width = '100%';
+    const content = await bulkZip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement("a");
+    a.href = url; a.download = bulkZipFolderName + ".zip";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    isBulkGenerating = false;
+    hidePhotopea();
+    document.getElementById('bulkGenerateModal').classList.remove('active');
+    document.getElementById('bulkNamesInput').disabled = false;
+    document.getElementById('bulkStartBtn').style.display = 'block';
+    await loadAllData();
+    showAlert("Success!", "Your ZIP file has been downloaded.", "🎉");
   }
 
   // --- UI NAVIGATION ---
