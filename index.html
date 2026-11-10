@@ -1,86 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Musaafir Editx</title>
-<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Cookie&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-  :root {
-    --bg-color: #0a0c10;
-    --bg-image: radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.25) 0%, transparent 45%), radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.2) 0%, transparent 45%), radial-gradient(circle at 50% 100%, rgba(229, 46, 113, 0.1) 0%, transparent 50%), radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
-    --text-main: #e6e6e6;
-    --text-muted: #9ca3af;
-    --card-bg: #131720;
-    --card-border: rgba(255,255,255,0.05);
-    --header-bg: rgba(22, 26, 34, 0.6);
-    --header-border: rgba(255,255,255,0.05);
-    --dropdown-bg: rgba(22, 26, 34, 0.95);
-    --dropdown-border: rgba(255,255,255,0.1);
-    --dropdown-hover: rgba(255,255,255,0.1);
-    --input-bg: #0a0c10;
-    --input-border: rgba(255,255,255,0.1);
-    --action-bg: #1a1f2a;
-    --btn-bg: rgba(255,255,255,0.05);
-    --btn-border: rgba(255,255,255,0.1);
-    --btn-hover: rgba(255,255,255,0.1);
-    --tab-bg: rgba(26, 31, 42, 0.6);
-    --cat-bg: rgba(255, 255, 255, 0.03);
-    --cat-color: #777;
-    --cat-hover-bg: rgba(255,255,255,0.08);
-  }
-
-  body.light-theme {
-    --bg-color: #f3f4f6;
-    --bg-image: radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 45%), radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 45%);
-    --text-main: #1f2937;
-    --text-muted: #6b7280;
-    --card-bg: #ffffff;
-    --card-border: rgba(0,0,0,0.05);
-    --header-bg: rgba(255, 255, 255, 0.8);
-    --header-border: rgba(0,0,0,0.05);
-    --dropdown-bg: rgba(255, 255, 255, 0.95);
-    --dropdown-border: rgba(0,0,0,0.1);
-    --dropdown-hover: rgba(0,0,0,0.05);
-    --input-bg: #f9fafb;
-    --input-border: rgba(0,0,0,0.1);
-    --action-bg: #f9fafb;
-    --btn-bg: rgba(0,0,0,0.05);
-    --btn-border: rgba(0,0,0,0.1);
-    --btn-hover: rgba(0,0,0,0.1);
-    --tab-bg: #ffffff;
-    --cat-bg: rgba(255, 255, 255, 0.8);
-    --cat-color: #6b7280;
-    --cat-hover-bg: rgba(0,0,0,0.05);
-  }
-
-  *{box-sizing:border-box; font-family: 'Poppins', sans-serif;}
-  
-  html, body {
-    margin: 0; padding: 0; background-color: var(--bg-color); min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* THE MAGIC TRICK - FIXED */
+  /* THE MAGIC TRICK - Z-INDEX FIX */
   #photopea-frame {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1; 
-    opacity: 1 !important; 
+    width: 100vw;
+    height: 100vh;
+    z-index: 1; /* Iframe ko visible rakhein */
+    opacity: 1 !important; /* Engine zinda rakhne ke liye zaroori */
     border: none;
-    pointer-events: none; 
+    pointer-events: none; /* Taake user ke clicks iframe pe na jayein */
   }
 
-  /* 2. The entire website UI */
+  /* Website UI jo iframe ke upar bichi hogi */
   #app-wrapper {
     position: relative;
-    z-index: 10;
+    z-index: 99; /* Sab kuch iframe ke upar */
     background-color: var(--bg-color);
     background-image: var(--bg-image); 
     background-attachment: fixed;
@@ -90,216 +24,6 @@
     transition: background-color 0.4s, color 0.4s;
     overflow-x: hidden;
   }
-
-  header{padding:15px 20px; background:var(--header-bg); backdrop-filter: blur(15px); border-bottom:1px solid var(--header-border); display:flex;justify-content:center;align-items:center; position:sticky;top:0;z-index:1000;}
-  .header-content { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-  
-  .logo-text { 
-    font-family: 'Cookie', cursive; font-weight: 400; font-size: 42px; letter-spacing: 0; padding-bottom: 5px;
-    background: linear-gradient(270deg, #ff8a00, #e52e71, #8b5cf6, #3b82f6, #ff8a00); background-size: 300% 300%;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradient-shift 4s ease infinite; filter: drop-shadow(0px 0px 15px rgba(139, 92, 246, 0.4)); 
-  }
-  .tagline { font-size: 10px; color: var(--text-muted); letter-spacing: 3px; text-transform: uppercase; margin-top: -5px; font-weight: 500; }
-  @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-
-  .header-icons { position: absolute; right: 20px; display: flex; align-items: center; gap: 15px; }
-  .icon-btn { font-size: 24px; cursor: pointer; color: var(--text-main); transition: 0.2s; user-select: none; }
-  .icon-btn:hover { color: #8b5cf6; transform: scale(1.1); }
-
-  .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 999; animation: fadeIn 0.3s ease; }
-  .menu-overlay.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-  .dropdown-menu { display: none; position: absolute; top: 75px; right: 20px; background: var(--dropdown-bg); backdrop-filter: blur(15px); border: 1px solid var(--dropdown-border); border-radius: 12px; padding: 8px; min-width: 220px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); z-index: 1001; flex-direction: column; gap: 2px; animation: slideDown 0.2s ease forwards; }
-  .dropdown-menu.active { display: flex; }
-  .menu-item { padding: 12px 15px; cursor: pointer; border-radius: 8px; color: var(--text-main); font-size: 14px; font-weight: 500; transition: all 0.2s; user-select: none; }
-  .menu-item:hover { background: var(--dropdown-hover); color: #3b82f6; }
-
-  .btn{padding:8px 12px; border-radius:6px; border:1px solid var(--btn-border);background:var(--btn-bg); color:var(--text-main); cursor:pointer; font-size:13px;font-weight:500; transition:all 0.2s ease;}
-  .btn:hover { background:var(--btn-hover); transform: translateY(-1px); }
-  .btn.primary{background: linear-gradient(135deg, #3b82f6, #8b5cf6);border:none; color:#fff; font-weight:600;box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;}
-  .btn.primary:hover{background: linear-gradient(135deg, #2563eb, #7c3aed);}
-  .btn.primary:disabled { opacity: 0.8; cursor: not-allowed; transform: none; }
-  .btn.danger{ background:rgba(185, 28, 28, 0.8); border-color:#b91c1c; color: #fff;}
-  .btn.action-btn{ padding: 6px 10px; font-size: 12px; }
-  .btn-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
-
-  #user-view{padding-bottom:50px;}
-  #category-bar { display: flex; overflow-x: auto; gap: 12px; padding: 25px 20px; max-width: 1200px; margin: 0 auto; -ms-overflow-style: none; scrollbar-width: none; }
-  #category-bar::-webkit-scrollbar { display: none; }
-  .cat-tab { padding: 10px 22px; border: 1px solid var(--btn-border); border-radius: 30px; background: var(--cat-bg); backdrop-filter: blur(10px); color: var(--cat-color); white-space: nowrap; cursor: pointer; font-size: 14px; font-weight: 500; }
-  .cat-tab.active { background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(139, 92, 246, 0.9)); border-color: rgba(139, 92, 246, 0.6); color: #fff; font-weight: 600; }
-
-  #design-grid {display: grid; grid-template-columns: 1fr; gap: 25px; padding: 20px; max-width: 1200px; margin: 0 auto;}
-  @media (min-width: 768px) {#design-grid { grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }}
-  
-  .design-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-  .design-card .img-container { position: relative; cursor: pointer; background: #000; overflow: hidden; }
-  .design-card img { width: 100%; display: block; object-fit: contain; transition: opacity 0.3s, filter 0.3s; }
-  
-  .action-area { display: none; padding: 20px; background: var(--action-bg); border-top: 2px solid #3b82f6; margin-top: auto; }
-  .design-card.active { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); }
-  .design-card.active .action-area { display: block; }
-  .action-area input { width: 100%; padding: 14px 16px; font-size: 16px; border-radius: 10px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-main); margin-bottom: 12px; outline: none; }
-
-  .loader-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 12, 16, 0.6); backdrop-filter: blur(10px); align-items: center; justify-content: center; flex-direction: column; color: #8b5cf6; font-size: 16px; font-weight: 600; z-index: 10; }
-  .spinner { width: 30px; height: 30px; border: 3px solid rgba(139, 92, 246, 0.3); border-top-color: #8b5cf6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  #contact-page, #about-page { display: none; padding: 30px 20px; max-width: 900px; margin: 0 auto; }
-  .page-header { display: flex; align-items: center; margin-bottom: 30px; gap: 15px; }
-  .back-btn { background: var(--btn-bg); border: 1px solid var(--btn-border); color: var(--text-main); padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; }
-  .contact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-  .contact-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none; color: var(--text-main); }
-  .contact-card svg { width: 45px; height: 45px; margin-bottom: 15px; }
-  .contact-card h3 { margin: 0 0 5px 0; font-size: 18px; }
-  .contact-card p { margin: 0; color: var(--text-muted); font-size: 13px; }
-  .about-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 30px; margin-bottom: 25px; }
-  .about-heading { margin-top: 0; font-size: 20px; text-align: center; border-bottom: 1px solid var(--card-border); padding-bottom: 15px; position: relative; }
-  .about-heading span { font-family: 'Audiowide', sans-serif; background: linear-gradient(270deg, #e52e71, #8b5cf6, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .about-heading::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #e52e71, #8b5cf6, #3b82f6); }
-  .about-section p { color: var(--text-muted); line-height: 1.8; font-size: 15px; text-align: justify; }
-  .features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
-  .feature-item { background: var(--bg-color); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border); }
-  .feature-item h4 { margin: 0 0 5px 0; color: var(--text-main); font-size: 16px; }
-  .feature-item p { margin: 0; color: var(--text-muted); font-size: 13px; }
-
-  #admin-view{padding:30px 20px;display:none;max-width:900px;margin:auto}
-  .tabs{display:flex;gap:10px;margin-bottom:25px;border-bottom:1px solid var(--card-border);padding-bottom:15px;overflow-x:auto;}
-  .tab{padding:10px 20px;border:1px solid var(--btn-border);border-radius:8px;background:var(--tab-bg);cursor:pointer;font-size:14px;font-weight:500; color: var(--text-main); white-space:nowrap;}
-  .tab.active{background:#3b82f6;border-color:#3b82f6;color:#fff;}
-  .panel{display:none}.panel.active{display:block}
-  .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:25px;margin-bottom:25px;}
-  .form-row{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
-  .form-row label{font-size:13px;color:var(--text-muted);font-weight:600;text-transform:uppercase;}
-  .form-row input, .form-row select{background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-main);padding:12px;border-radius:8px;font-size:14px;outline:none;}
-  
-  .admin-item{display:flex;align-items:center;gap:15px;padding:15px;border:1px solid var(--card-border);background:var(--tab-bg);border-radius:10px;margin-bottom:12px;flex-wrap:wrap;}
-  .admin-item img{width:70px;height:70px;object-fit:cover;border-radius:8px}
-  .admin-item-info{flex:1; min-width: 150px;}
-  .admin-item-info h4{margin:0 0 5px 0;font-size:16px;font-weight:600; display:flex; align-items:center; gap:8px;}
-  .admin-item-info span{font-size:12px;color:var(--text-muted)}
-  .admin-actions{display:flex;gap:8px;flex-wrap:wrap;}
-  .status-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;}
-  .status-published { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-  .status-draft { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; }
-  .modal-overlay.active { display: flex; }
-  .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; max-width: 400px; width: 100%; padding: 30px 25px; text-align: center; }
-  .modal-icon { font-size: 50px; margin-bottom: 15px; }
-  .modal-title { margin: 0 0 10px 0; font-size: 22px; font-weight: 700; }
-  .modal-msg { margin: 0 0 25px 0; font-size: 15px; color: var(--text-muted); }
-  .modal-actions { display: flex; gap: 12px; justify-content: center; }
-  .modal-actions .btn { flex: 1; padding: 12px; font-size: 15px; }
-  .edit-modal-box { text-align: left; }
-  .edit-modal-box h3 { color: #8b5cf6; margin-top: 0; }
-</style>
-</head>
-<body>
-
-<!-- IFRAME OUTSIDE WRAPPER, VISIBLE TO BROWSER, BEHIND EVERYTHING -->
-<iframe id="photopea-frame" src="about:blank"></iframe>
-
-<!-- APP UI WRAPPER (Solid background covering the iframe) -->
-<div id="app-wrapper">
-
-  <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
-
-  <header>
-    <div class="header-content">
-      <div class="logo-text">Musaafir Editx</div>
-      <div class="tagline">Designed To Impress</div>
-    </div>
-    <div class="header-icons"><div class="icon-btn" onclick="toggleMenu()">☰</div></div>
-    
-    <div class="dropdown-menu" id="dropdownMenu">
-      <div class="menu-item" id="theme-menu-item" onclick="toggleTheme()">☀️ Switch to Light Theme</div>
-      <div class="menu-item" onclick="toggleView(); toggleMenu();">⚙️ Admin Panel</div>
-      <div class="menu-item" onclick="openGuide(); toggleMenu();">📖 How to Use</div>
-      <div class="menu-item" onclick="openContact(); toggleMenu();">📞 Contact Us</div>
-      <div class="menu-item" onclick="openAbout(); toggleMenu();">ℹ️ About Us</div>
-    </div>
-  </header>
-
-  <div id="user-view"><div id="category-bar"></div><div id="design-grid"></div></div>
-
-  <div id="contact-page">
-    <div class="page-header"><button class="back-btn" onclick="closeSubPage('contact-page')">← Back</button><h2 style="margin:0; font-weight:600; font-size:20px;">Get in touch</h2></div>
-    <div class="contact-grid">
-      <a href="#" id="contact-fb" target="_blank" class="contact-card"><svg viewBox="0 0 24 24" fill="none" stroke="#1877F2" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg><h3>Facebook</h3><p>Connect with Us</p></a>
-      <a href="#" id="contact-wa" target="_blank" class="contact-card"><svg viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><h3>WhatsApp</h3><p>Let's chat</p></a>
-      <a href="#" id="contact-email" class="contact-card"><svg viewBox="0 0 24 24" fill="none" stroke="#EA4335" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg><h3>Email</h3><p>Drop a message</p></a>
-    </div>
-  </div>
-
-  <div id="about-page">
-    <div class="page-header"><button class="back-btn" onclick="closeSubPage('about-page')">← Back</button><h2 style="margin:0; font-weight:600; font-size:20px;">About Us</h2></div>
-    <div class="about-section"><h2 class="about-heading"><span>About Musaafir Editx</span></h2><p>Welcome to Musaafir Editx—your private studio for high-end typography and stunning name art. We turn ordinary text into extraordinary visual statements using advanced, Photoshop-grade layer styles. Whether you're designing for a special moment or just exploring creativity, we make professional-grade effects effortless.</p></div>
-    <div class="about-section"><h2 class="about-heading"><span>Our Capabilities</span></h2>
-      <div class="features-grid">
-        <div class="feature-item"><h4>✨ Premium Effects</h4><p>Powered by real Photopea layer styles for an authentic Photoshop look.</p></div>
-        <div class="feature-item"><h4>⚡ Instant Generation</h4><p>Just type your name and get a professionally designed image in seconds.</p></div>
-        <div class="feature-item"><h4>💎 High Quality</h4><p>Download your custom art in crystal clear, high-definition resolution.</p></div>
-        <div class="feature-item"><h4>📱 User Friendly</h4><p>Easy-to-use interface with no design skills required. Anyone can do it!</p></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="admin-view">
-    <div class="tabs">
-      <div class="tab active" onclick="switchTab('designs', this)">Designs</div>
-      <div class="tab" onclick="switchTab('categories', this)">Categories</div>
-      <div class="tab" onclick="switchTab('settings', this)">Settings</div>
-      <div class="tab" onclick="switchTab('stats', this)">Stats</div>
-    </div>
-    <div id="panel-designs" class="panel active">
-      <div class="card">
-        <h3 style="margin-top:0; font-weight:600;">Add New Design</h3>
-        <div class="form-row"><label>Design Name</label><input type="text" id="admin-name" placeholder="e.g., Malik Glass Effect"></div>
-        <div class="form-row"><label>Category</label><select id="admin-category"></select></div>
-        <div class="form-row"><label>Preview Image (JPG/PNG)</label><input type="file" id="admin-preview" accept="image/*"></div>
-        <div class="form-row"><label>PSD File (With Effects)</label><input type="file" id="admin-file" accept=".psd"></div>
-        <button class="btn primary" onclick="saveDesignAdmin()" style="padding:14px 25px;font-size:16px;width:100%;">⬆ Save Design</button>
-      </div>
-      <div class="card"><h3 style="margin-top:0; font-weight:600;">Manage Designs</h3><div id="admin-list"></div></div>
-    </div>
-    <div id="panel-categories" class="panel">
-      <div class="card"><h3 style="margin-top:0; font-weight:600;">Add New Category</h3><div class="form-row"><label>Category Name</label><input type="text" id="cat-name" placeholder="e.g., Wedding, Birthday"></div><button class="btn primary" onclick="saveCategoryAdmin()" style="width:100%;">+ Add Category</button></div>
-      <div class="card"><h3 style="margin-top:0; font-weight:600;">Manage Categories</h3><div id="cat-list"></div></div>
-    </div>
-    <div id="panel-settings" class="panel">
-      <div class="card">
-        <h3 style="margin-top:0; font-weight:600;">Contact Links Settings</h3>
-        <div class="form-row"><label>Facebook Profile URL</label><input type="text" id="setting-fb" placeholder="https://facebook.com/yourprofile"></div>
-        <div class="form-row"><label>WhatsApp Number (with country code)</label><input type="text" id="setting-wa" placeholder="923000000000"></div>
-        <div class="form-row"><label>Email Address</label><input type="text" id="setting-email" placeholder="your-email@example.com"></div>
-        <button class="btn primary" onclick="saveSettingsAdmin()" style="width:100%;">Save Settings</button>
-      </div>
-    </div>
-    <div id="panel-stats" class="panel"><div class="card"><h3 style="margin-top:0; font-weight:600;">Dashboard Stats</h3><div id="admin-stats-content"></div></div></div>
-  </div>
-
-  <div class="modal-overlay" id="editModal"><div class="modal-box edit-modal-box"><h3 id="editModalTitle">Edit</h3><div class="form-row"><label>Name</label><input type="text" id="edit-name"></div><div class="form-row" id="edit-category-row"><label>Category</label><select id="edit-category"></select></div><div class="modal-actions" style="margin-top:25px;"><button class="btn" onclick="closeEditModal()">Cancel</button><button class="btn primary" onclick="saveEdit()">Save Changes</button></div></div></div>
-
-  <div class="modal-overlay" id="bulkGenerateModal">
-    <div class="modal-box" style="text-align: left;">
-      <h3 style="color: #8b5cf6; margin-top: 0;">📦 Bulk Generate (Max 20)</h3>
-      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">Enter names line by line.</p>
-      <textarea id="bulkNamesInput" style="width: 100%; height: 120px; padding: 10px; border-radius: 8px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--input-border); margin-bottom: 15px; font-family: monospace; outline: none; resize: none;"></textarea>
-      <div id="bulkProgressContainer" style="display: none; margin-bottom: 20px;">
-          <div style="font-size: 13px; margin-bottom: 5px; font-weight: 600; color: #8b5cf6;" id="bulkProgressText">Generating 0 of 0...</div>
-          <div style="width: 100%; height: 6px; background: var(--input-bg); border-radius: 3px; overflow: hidden;"><div id="bulkProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width 0.3s;"></div></div>
-      </div>
-      <div class="modal-actions"><button class="btn" id="bulkCancelBtn" onclick="closeBulkModal()">Cancel</button><button class="btn primary" id="bulkStartBtn" onclick="startBulkGeneration()">Start Generation</button></div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="customAlertModal"><div class="modal-box"><div class="modal-icon" id="alertIcon">✅</div><h3 class="modal-title" id="alertTitle">Success</h3><p class="modal-msg" id="alertMsg">Action completed.</p><div class="modal-actions"><button class="btn primary" onclick="closeCustomAlert()">Okay</button></div></div></div>
-  <div class="modal-overlay" id="customConfirmModal"><div class="modal-box"><div class="modal-icon" id="confirmIcon" style="color: #f59e0b;">⚠️</div><h3 class="modal-title" id="confirmTitle">Are you sure?</h3><p class="modal-msg" id="confirmMsg">This action cannot be undone.</p><div class="modal-actions"><button class="btn" id="confirmBtnNo">Cancel</button><button class="btn danger" id="confirmBtnYes">Yes, Proceed</button></div></div></div>
-  <div class="modal-overlay" id="infoModal" onclick="closeModal(event)"><div class="modal-box" style="text-align: left;"><h3 id="infoModalTitle" style="color: #8b5cf6; margin-top: 0;">Title</h3><div id="infoModalBody"></div></div></div>
-
-</div> <!-- END APP WRAPPER -->
 <script>
   const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co"; 
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg"; // <-- YAHAN APNI KEY PASTE KAREIN
@@ -451,34 +175,49 @@
     btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Generating...'; img.style.opacity = '0.4'; img.style.filter = 'blur(5px)'; loader.style.display = 'flex'; loader.innerHTML = `<div class="spinner"></div><div>Connecting...</div>`;
 
     clearTimeout(generationTimeout);
-    generationTimeout = setTimeout(() => { showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 60000);
+    generationTimeout = setTimeout(() => { showAlert("Timeout", "Took too long. Try again.", "⏳"); resetUI(cardId); }, 120000); // 2 minutes timeout
 
     const processPSD = () => {
         loader.innerHTML = `<div class="spinner"></div><div>Downloading PSD...</div>`;
         
-        // USING PHOTOPEA API app.open() WITH A CALLBACK
+        // Yahan hum Photopea ko direct URL de rahe hain, wo khud download karega
         const script = `
+          app.echoToOE("STATUS: Downloading...");
           try {
-            app.open("${design.psdUrl}", function() {
-              try {
-                var doc = app.activeDocument;
-                var newText = "${text.replace(/"/g, '\\"')}";
-                var found = false;
-                function findLayer(layers) {
-                  for (var i = 0; i < layers.length; i++) {
-                    var l = layers[i];
-                    if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                    else if (l.kind === LayerKind.TEXT) {
-                      if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
+            app.open("${design.psdUrl}");
+            
+            var checkCount = 0;
+            var checkInterval = setInterval(function() {
+              checkCount++;
+              if (checkCount > 90) { // 90 seconds max wait for download
+                clearInterval(checkInterval);
+                app.echoToOE("ERROR: File download timeout inside Photopea.");
+                return;
+              }
+              // Check if file is fully loaded
+              if (app.documents.length > 0 && app.activeDocument && app.activeDocument.width > 0) {
+                clearInterval(checkInterval);
+                app.echoToOE("STATUS: Processing...");
+                
+                try {
+                  var doc = app.activeDocument;
+                  var newText = "${text.replace(/"/g, '\\"')}";
+                  var found = false;
+                  function findLayer(layers) {
+                    for (var i = 0; i < layers.length; i++) {
+                      var l = layers[i];
+                      if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                      else if (l.kind === LayerKind.TEXT) {
+                        if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
+                      }
                     }
                   }
-                }
-                findLayer(doc.layers);
-                
-                if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-                else doc.saveToOE("png");
-              } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            });
+                  findLayer(doc.layers);
+                  if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
+                  else doc.saveToOE("png");
+                } catch(err) { app.echoToOE("ERROR: " + err.message); }
+              }
+            }, 1000); // Check every 1 second
           } catch(err) { app.echoToOE("ERROR: " + err.message); }
         `;
         frame.contentWindow.postMessage(script, "*");
@@ -506,25 +245,32 @@
     const processPSD = () => {
         const script = `
           try {
-            app.open("${design.psdUrl}", function() {
-              try {
-                var doc = app.activeDocument;
-                var newText = "${text.replace(/"/g, '\\"')}";
-                var found = false;
-                function findLayer(layers) {
-                  for (var i = 0; i < layers.length; i++) {
-                    var l = layers[i];
-                    if (l.typename === "LayerSet") { findLayer(l.layers); } 
-                    else if (l.kind === LayerKind.TEXT) {
-                      if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
+            app.open("${design.psdUrl}");
+            var checkCount = 0;
+            var checkInterval = setInterval(function() {
+              checkCount++;
+              if (checkCount > 90) { clearInterval(checkInterval); app.echoToOE("ERROR: Download timeout."); return; }
+              if (app.documents.length > 0 && app.activeDocument && app.activeDocument.width > 0) {
+                clearInterval(checkInterval);
+                try {
+                  var doc = app.activeDocument;
+                  var newText = "${text.replace(/"/g, '\\"')}";
+                  var found = false;
+                  function findLayer(layers) {
+                    for (var i = 0; i < layers.length; i++) {
+                      var l = layers[i];
+                      if (l.typename === "LayerSet") { findLayer(l.layers); } 
+                      else if (l.kind === LayerKind.TEXT) {
+                        if (l.name.toUpperCase() === "NAME") { l.textItem.contents = newText; found = true; }
+                      }
                     }
                   }
-                }
-                findLayer(doc.layers);
-                if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
-                else doc.saveToOE("png");
-              } catch(err) { app.echoToOE("ERROR: " + err.message); }
-            });
+                  findLayer(doc.layers);
+                  if (!found) app.echoToOE("ERROR: 'NAME' layer not found.");
+                  else doc.saveToOE("png");
+                } catch(err) { app.echoToOE("ERROR: " + err.message); }
+              }
+            }, 1000);
           } catch(err) { app.echoToOE("ERROR: " + err.message); }
         `;
         frame.contentWindow.postMessage(script, "*");
