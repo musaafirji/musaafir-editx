@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Musaafir Editx</title>
-<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Cookie&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Cookie&family=Poppins:wght@400;500;600;700;800&family=Zen+Dots&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -34,7 +34,9 @@
   #global-loader.active{display:flex}
   header{padding:15px 20px;background:var(--header-bg);backdrop-filter:blur(15px);border-bottom:1px solid var(--header-border);display:flex;justify-content:center;align-items:center;position:sticky;top:0;z-index:1000}
   .header-content{display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
-  .logo-text{font-family:'Cookie',cursive;font-weight:400;font-size:42px;letter-spacing:0;padding-bottom:5px;background:linear-gradient(270deg,#ff8a00,#e52e71,#8b5cf6,#3b82f6,#ff8a00);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradient-shift 4s ease infinite;filter:drop-shadow(0 0 15px rgba(139,92,246,.4))}
+  
+  .logo-text{font-family:'Zen Dots',sans-serif;font-weight:400;font-size:24px;letter-spacing:0;padding-bottom:5px;background:linear-gradient(270deg,#ff8a00,#e52e71,#8b5cf6,#3b82f6,#ff8a00);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradient-shift 4s ease infinite;filter:drop-shadow(0 0 15px rgba(139,92,246,.4))}
+  
   .tagline{font-size:10px;color:var(--text-muted);letter-spacing:3px;text-transform:uppercase;margin-top:-5px;font-weight:500}
   @keyframes gradient-shift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
   .header-icons{position:absolute;right:20px;display:flex;align-items:center;gap:15px}.icon-btn{font-size:24px;cursor:pointer;color:var(--text-main);transition:.2s;user-select:none}.icon-btn:hover{color:#8b5cf6;transform:scale(1.1)}
@@ -47,6 +49,67 @@
   .cat-tab{padding:10px 22px;border:1px solid var(--btn-border);border-radius:30px;background:var(--cat-bg);backdrop-filter:blur(10px);color:var(--cat-color);white-space:nowrap;cursor:pointer;font-size:14px;font-weight:500}.cat-tab.active{background:linear-gradient(135deg,rgba(59,130,246,.9),rgba(139,92,246,.9));border-color:rgba(139,92,246,.6);color:#fff;font-weight:600}
   #design-grid{display:grid;grid-template-columns:1fr;gap:25px;padding:20px;max-width:1200px;margin:0 auto}@media(min-width:768px){#design-grid{grid-template-columns:repeat(auto-fill,minmax(350px,1fr))}}
   .design-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 5px 20px rgba(0,0,0,.1)}.design-card .img-container{position:relative;cursor:pointer;background:#000;overflow:hidden}.design-card img{width:100%;display:block;object-fit:contain;transition:opacity .3s,filter .3s}
+  
+  .user-copy-btn {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.75);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+      z-index: 10;
+  }
+  .user-copy-btn:hover {
+      background: rgba(15, 23, 42, 0.95);
+      transform: translateY(-2px);
+  }
+  .design-card.active .user-copy-btn {
+      display: flex;
+      animation: slideUpFade 0.3s ease forwards;
+  }
+  @keyframes slideUpFade {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+  }
+
+  #toast-container {
+      position: fixed;
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      color: white;
+      padding: 12px 25px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 500;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      z-index: 100000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+  }
+  #toast-container.show {
+      opacity: 1;
+      top: 30px;
+  }
+
   .action-area{display:none;padding:20px;background:var(--action-bg);border-top:2px solid #3b82f6;margin-top:auto}.design-card.active{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.5)}.design-card.active .action-area{display:block}.action-area input{width:100%;padding:14px 16px;font-size:16px;border-radius:10px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--text-main);margin-bottom:12px;outline:none}
   .spinner{width:40px;height:40px;border:4px solid rgba(139,92,246,.3);border-top-color:#8b5cf6;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
   #contact-page,#about-page{display:none;padding:30px 20px;max-width:900px;margin:0 auto}.page-header{display:flex;align-items:center;margin-bottom:30px;gap:15px}.back-btn{background:var(--btn-bg);border:1px solid var(--btn-border);color:var(--text-main);padding:10px 15px;border-radius:8px;cursor:pointer;font-size:14px}
@@ -56,17 +119,34 @@
   #admin-view{padding:30px 20px;display:none;max-width:900px;margin:auto}.tabs{display:flex;gap:10px;margin-bottom:25px;border-bottom:1px solid var(--card-border);padding-bottom:15px;overflow-x:auto}.tab{padding:10px 20px;border:1px solid var(--btn-border);border-radius:8px;background:var(--tab-bg);cursor:pointer;font-size:14px;font-weight:500;color:var(--text-main);white-space:nowrap}.tab.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
   .panel{display:none}.panel.active{display:block}.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:25px;margin-bottom:25px}.form-row{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}.form-row label{font-size:13px;color:var(--text-muted);font-weight:600;text-transform:uppercase}.form-row input,.form-row select{background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-main);padding:12px;border-radius:8px;font-size:14px;outline:none}
   .admin-item{display:flex;align-items:center;gap:15px;padding:15px;border:1px solid var(--card-border);background:var(--tab-bg);border-radius:10px;margin-bottom:12px;flex-wrap:wrap}.admin-item img{width:70px;height:70px;object-fit:cover;border-radius:8px}.admin-item-info{flex:1;min-width:150px}.admin-item-info h4{margin:0 0 5px;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}.admin-item-info span{font-size:12px;color:var(--text-muted)}.admin-actions{display:flex;gap:8px;flex-wrap:wrap}.status-badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold}.status-published{background:rgba(34,197,94,.2);color:#22c55e}.status-draft{background:rgba(245,158,11,.2);color:#f59e0b}
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:100000;align-items:center;justify-content:center;padding:20px}.modal-overlay.active{display:flex}.modal-box{background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;max-width:400px;width:100%;padding:30px 25px;text-align:center}.modal-icon{font-size:50px;margin-bottom:15px}.modal-title{margin:0 0 10px;font-size:22px;font-weight:700}.modal-msg{margin:0 0 25px;font-size:15px;color:var(--text-muted)}.modal-actions{display:flex;gap:12px;justify-content:center}.modal-actions .btn{flex:1;padding:12px;font-size:15px}.edit-modal-box{text-align:left}.edit-modal-box h3{color:#8b5cf6;margin-top:0}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:100000;align-items:center;justify-content:center;padding:20px}.modal-overlay.active{display:flex}.modal-box{background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;max-width:400px;width:100%;padding:30px 25px;text-align:left}.modal-icon{font-size:50px;margin-bottom:15px;text-align:center}.modal-title{margin:0 0 10px;font-size:22px;font-weight:700;text-align:center}.modal-msg{margin:0 0 25px;font-size:15px;color:var(--text-muted;text-align:center)}.modal-actions{display:flex;gap:12px;justify-content:center}.modal-actions .btn{flex:1;padding:12px;font-size:15px}.edit-modal-box{text-align:left}.edit-modal-box h3{color:#8b5cf6;margin-top:0}
 </style>
 </head>
 <body>
 <iframe id="photopea-frame" src="about:blank"></iframe>
 <div id="global-loader"><div class="spinner"></div><div id="global-loader-text" style="margin-top:20px;">Processing...</div></div>
+
+<div id="toast-container"></div>
+
 <div id="app-wrapper">
   <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
-  <header><div class="header-content"><div class="logo-text">Musaafir Editx</div><div class="tagline">Designed To Impress</div></div><div class="header-icons"><div class="icon-btn" onclick="toggleMenu()">☰</div></div>
-    <div class="dropdown-menu" id="dropdownMenu"><div class="menu-item" id="theme-menu-item" onclick="toggleTheme()">☀️ Switch to Light Theme</div><div class="menu-item" onclick="toggleView(); toggleMenu();">⚙️ Admin Panel</div><div class="menu-item" onclick="openGuide(); toggleMenu();">📖 How to Use</div><div class="menu-item" onclick="openContact(); toggleMenu();">📞 Contact Us</div><div class="menu-item" onclick="openAbout(); toggleMenu();">ℹ️ About Us</div></div>
+  <header>
+    <div class="header-content"><div class="logo-text">Musaafir Editx</div><div class="tagline">Designed To Impress</div></div>
+    <div class="header-icons"><div class="icon-btn" onclick="toggleMenu()">☰</div></div>
+    
+    <!-- MENU UPDATED WITH LOGIN / LOGOUT -->
+    <div class="dropdown-menu" id="dropdownMenu">
+        <div class="menu-item" id="theme-menu-item" onclick="toggleTheme()">☀️ Switch to Light Theme</div>
+        <div class="menu-item" onclick="openGuide(); toggleMenu();">📖 How to Use</div>
+        <div class="menu-item" onclick="openContact(); toggleMenu();">📞 Contact Us</div>
+        <div class="menu-item" onclick="openAbout(); toggleMenu();">ℹ️ About Us</div>
+        <!-- Auth Items (Inki Visibility JS Control Karegi) -->
+        <div class="menu-item" id="login-menu-item" onclick="openLoginModal(); toggleMenu();">🔐 Admin Login</div>
+        <div class="menu-item" id="admin-menu-item" style="display:none;" onclick="toggleView(); toggleMenu();">⚙️ Admin Panel</div>
+        <div class="menu-item" id="logout-menu-item" style="display:none;" onclick="logoutUser(); toggleMenu();">🚪 Logout</div>
+    </div>
   </header>
+  
   <div id="user-view"><div id="category-bar"></div><div id="design-grid"></div></div>
   <div id="contact-page"><div class="page-header"><button class="back-btn" onclick="closeSubPage('contact-page')">← Back</button><h2 style="margin:0;font-weight:600;font-size:20px;">Get in touch</h2></div><div class="contact-grid">
     <a href="#" id="contact-fb" target="_blank" class="contact-card"><svg viewBox="0 0 24 24" fill="none" stroke="#1877F2" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg><h3>Facebook</h3><p>Connect with Us</p></a>
@@ -76,38 +156,202 @@
     <div class="about-section"><h2 class="about-heading"><span>About Musaafir Editx</span></h2><p>Welcome to Musaafir Editx—your private studio for high-end typography and stunning name art. We turn ordinary text into extraordinary visual statements using advanced, Photoshop-grade layer styles. Whether you're designing for a special moment or just exploring creativity, we make professional-grade effects effortless.</p></div>
     <div class="about-section"><h2 class="about-heading"><span>Our Capabilities</span></h2><div class="features-grid"><div class="feature-item"><h4>✨ Premium Effects</h4><p>Powered by real Photopea layer styles for an authentic Photoshop look.</p></div><div class="feature-item"><h4>⚡ Instant Generation</h4><p>Just type your name and get a professionally designed image in seconds.</p></div><div class="feature-item"><h4>💎 High Quality</h4><p>Download your custom art in crystal clear, high-definition resolution.</p></div><div class="feature-item"><h4>📱 User Friendly</h4><p>Easy-to-use interface with no design skills required. Anyone can do it!</p></div></div></div>
   </div>
-  <div id="admin-view"><div class="tabs"><div class="tab active" onclick="switchTab('designs',this)">Designs</div><div class="tab" onclick="switchTab('categories',this)">Categories</div><div class="tab" onclick="switchTab('settings',this)">Settings</div><div class="tab" onclick="switchTab('stats',this)">Stats</div></div>
+  
+  <div id="admin-view"><div class="tabs"><div class="tab active" id="tab-designs" onclick="switchTab('designs',this)">Designs</div><div class="tab" id="tab-categories" onclick="switchTab('categories',this)">Categories</div><div class="tab" id="tab-settings" onclick="switchTab('settings',this)">Settings</div><div class="tab" id="tab-stats" onclick="switchTab('stats',this)">Stats</div></div>
     <div id="panel-designs" class="panel active"><div class="card"><h3 style="margin-top:0;font-weight:600;">Add New Design</h3><div class="form-row"><label>Design Name</label><input type="text" id="admin-name" placeholder="e.g., Malik Glass Effect"></div><div class="form-row"><label>Category</label><select id="admin-category"></select></div><div class="form-row"><label>Preview Image (JPG/PNG)</label><input type="file" id="admin-preview" accept="image/*"></div><div class="form-row"><label>PSD File (With Effects)</label><input type="file" id="admin-file" accept=".psd"></div><button class="btn primary" onclick="saveDesignAdmin()" style="padding:14px 25px;font-size:16px;width:100%;">⬆ Save Design</button></div><div class="card"><h3 style="margin-top:0;font-weight:600;">Manage Designs</h3><div id="admin-list"></div></div></div>
     <div id="panel-categories" class="panel"><div class="card"><h3 style="margin-top:0;font-weight:600;">Add New Category</h3><div class="form-row"><label>Category Name</label><input type="text" id="cat-name" placeholder="e.g., Wedding, Birthday"></div><button class="btn primary" onclick="saveCategoryAdmin()" style="width:100%;">+ Add Category</button></div><div class="card"><h3 style="margin-top:0;font-weight:600;">Manage Categories</h3><div id="cat-list"></div></div></div>
     <div id="panel-settings" class="panel"><div class="card"><h3 style="margin-top:0;font-weight:600;">Contact Links Settings</h3><div class="form-row"><label>Facebook Profile URL</label><input type="text" id="setting-fb" placeholder="https://facebook.com/yourprofile"></div><div class="form-row"><label>WhatsApp Number (with country code)</label><input type="text" id="setting-wa" placeholder="923000000000"></div><div class="form-row"><label>Email Address</label><input type="text" id="setting-email" placeholder="your-email@example.com"></div><button class="btn primary" onclick="saveSettingsAdmin()" style="width:100%;">Save Settings</button></div></div>
     <div id="panel-stats" class="panel"><div class="card"><h3 style="margin-top:0;font-weight:600;">Dashboard Stats</h3><div id="admin-stats-content"></div></div></div>
   </div>
+
+  <!-- NAYA LOGIN MODAL (POPUP) -->
+  <div class="modal-overlay" id="loginModal">
+      <div class="modal-box">
+          <h3 style="margin-top:0; color:#8b5cf6; text-align:center;">🔐 Admin Login</h3>
+          <div class="form-row">
+              <label>Email</label>
+              <input type="email" id="login-email" placeholder="admin@example.com">
+          </div>
+          <div class="form-row" style="margin-top:15px;">
+              <label>Password</label>
+              <input type="password" id="login-password" placeholder="••••••••">
+          </div>
+          <div class="modal-actions" style="margin-top:25px;">
+              <button class="btn" onclick="closeLoginModal()">Cancel</button>
+              <button class="btn primary" id="loginBtn" onclick="loginUser()">Login</button>
+          </div>
+      </div>
+  </div>
+
   <div class="modal-overlay" id="editModal"><div class="modal-box edit-modal-box"><h3 id="editModalTitle">Edit</h3><div class="form-row"><label>Name</label><input type="text" id="edit-name"></div><div class="form-row" id="edit-category-row"><label>Category</label><select id="edit-category"></select></div><div class="modal-actions" style="margin-top:25px;"><button class="btn" onclick="closeEditModal()">Cancel</button><button class="btn primary" onclick="saveEdit()">Save Changes</button></div></div></div>
   <div class="modal-overlay" id="bulkGenerateModal"><div class="modal-box" style="text-align:left;"><h3 style="color:#8b5cf6;margin-top:0;">📦 Bulk Generate (Max 20)</h3><p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Enter names line by line.</p><textarea id="bulkNamesInput" style="width:100%;height:120px;padding:10px;border-radius:8px;background:var(--input-bg);color:var(--text-main);border:1px solid var(--input-border);margin-bottom:15px;font-family:monospace;outline:none;resize:none;"></textarea><div id="bulkProgressContainer" style="display:none;margin-bottom:20px;"><div style="font-size:13px;margin-bottom:5px;font-weight:600;color:#8b5cf6;" id="bulkProgressText">Generating 0 of 0...</div><div style="width:100%;height:6px;background:var(--input-bg);border-radius:3px;overflow:hidden;"><div id="bulkProgressBar" style="width:0%;height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);transition:width .3s;"></div></div></div><div class="modal-actions"><button class="btn" id="bulkCancelBtn" onclick="closeBulkModal()">Cancel</button><button class="btn primary" id="bulkStartBtn" onclick="startBulkGeneration()">Start Generation</button></div></div></div>
-  <div class="modal-overlay" id="customAlertModal"><div class="modal-box"><div class="modal-icon" id="alertIcon">✅</div><h3 class="modal-title" id="alertTitle">Success</h3><p class="modal-msg" id="alertMsg">Action completed.</p><div class="modal-actions"><button class="btn primary" onclick="closeCustomAlert()">Okay</button></div></div></div>
-  <div class="modal-overlay" id="customConfirmModal"><div class="modal-box"><div class="modal-icon" id="confirmIcon" style="color:#f59e0b;">⚠️</div><h3 class="modal-title" id="confirmTitle">Are you sure?</h3><p class="modal-msg" id="confirmMsg">This action cannot be undone.</p><div class="modal-actions"><button class="btn" id="confirmBtnNo">Cancel</button><button class="btn danger" id="confirmBtnYes">Yes, Proceed</button></div></div></div>
+  <div class="modal-overlay" id="customAlertModal"><div class="modal-box"><div class="modal-icon" id="alertIcon" style="text-align:center;">✅</div><h3 class="modal-title" id="alertTitle" style="text-align:center;">Success</h3><p class="modal-msg" id="alertMsg" style="text-align:center;">Action completed.</p><div class="modal-actions"><button class="btn primary" onclick="closeCustomAlert()">Okay</button></div></div></div>
+  <div class="modal-overlay" id="customConfirmModal"><div class="modal-box"><div class="modal-icon" id="confirmIcon" style="color:#f59e0b; text-align:center;">⚠️</div><h3 class="modal-title" id="confirmTitle" style="text-align:center;">Are you sure?</h3><p class="modal-msg" id="confirmMsg" style="text-align:center;">This action cannot be undone.</p><div class="modal-actions"><button class="btn" id="confirmBtnNo">Cancel</button><button class="btn danger" id="confirmBtnYes">Yes, Proceed</button></div></div></div>
   <div class="modal-overlay" id="infoModal" onclick="closeModal(event)"><div class="modal-box" style="text-align:left;"><h3 id="infoModalTitle" style="color:#8b5cf6;margin-top:0;">Title</h3><div id="infoModalBody"></div></div></div>
 </div>
 <script>
   const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  
   let allDesigns=[],allCategories=[],currentDesignId=null,currentCategoryFilter='all',editingId=null,editingType='';
   const frame=document.getElementById('photopea-frame'),globalLoader=document.getElementById('global-loader'),globalLoaderText=document.getElementById('global-loader-text');
   let isPhotopeaReady=false,pendingGeneration=null,generationTimeout=null;
   let bulkDesignId=null,isBulkGenerating=false,bulkQueue=[],bulkCurrentIndex=0,bulkZip=null,bulkZipFolderName="";
   
-  // CACHING VARIABLES
-  let cachedBuffer = null;
-  let cachedDesignId = null;
+  let cachedBuffer = null, cachedDesignId = null, loadedDocumentId = null, isPreloading = false;
+  
+  // ---> LOGIN AUR ROLES VARIABLES <---
+  let currentUser = null;
+  let currentUserRole = null;
+  let isAdminView = false; // Isko admin banaya gaya hai view check karne ke liye
+
+  // ---> AUTHENTICATION FUNCTIONS <---
+  async function checkAuth() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+          currentUser = session.user;
+          try {
+              // Role check karna database se
+              const { data } = await supabaseClient.from('user_roles').select('role').eq('id', currentUser.id).single();
+              if (data) currentUserRole = data.role;
+          } catch(e) { console.error("Role Error", e); }
+      } else {
+          currentUser = null;
+          currentUserRole = null;
+      }
+      updateMenuUI();
+  }
+
+  function updateMenuUI() {
+      if (currentUser) {
+          document.getElementById('login-menu-item').style.display = 'none';
+          document.getElementById('admin-menu-item').style.display = 'block';
+          document.getElementById('logout-menu-item').style.display = 'block';
+      } else {
+          document.getElementById('login-menu-item').style.display = 'block';
+          document.getElementById('admin-menu-item').style.display = 'none';
+          document.getElementById('logout-menu-item').style.display = 'none';
+          if (isAdminView) toggleView(); // Agar panel khula hai to band kar do
+      }
+  }
+
+  function openLoginModal() { document.getElementById('login-email').value = ''; document.getElementById('login-password').value = ''; document.getElementById('loginModal').classList.add('active'); }
+  function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
+
+  async function loginUser() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-password').value.trim();
+      if(!email || !pass) return showAlert("Error", "Dono khane pur karein.", "⚠️");
+      
+      const btn = document.getElementById('loginBtn');
+      btn.innerHTML = 'Wait...'; btn.disabled = true;
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: pass });
+      
+      btn.innerHTML = 'Login'; btn.disabled = false;
+
+      if (error) {
+          return showAlert("Login Failed", "Email ya password ghalat hai.", "❌");
+      }
+      
+      closeLoginModal();
+      showToastMessage("Welcome to Admin! ✅");
+      await checkAuth(); // Session update
+      
+      // Auto open admin panel after login
+      if(!isAdminView) toggleView();
+  }
+
+  async function logoutUser() {
+      await supabaseClient.auth.signOut();
+      showToastMessage("Logged Out 👋");
+      await checkAuth();
+  }
+
+  // --- INITIAL LOAD EVENTS ---
+  window.addEventListener('DOMContentLoaded', async () => {
+      frame.src="https://www.photopea.com#%7B%7D";
+      try {
+          const savedTheme=localStorage.getItem('theme'),menuItem=document.getElementById('theme-menu-item');
+          if(savedTheme==='light'){document.getElementById('app-wrapper').classList.add('light-theme');document.body.classList.add('light-theme');menuItem.innerHTML='🌙 Switch to Dark Theme'}
+          else{document.getElementById('app-wrapper').classList.remove('light-theme');document.body.classList.remove('light-theme');menuItem.innerHTML='☀️ Switch to Light Theme'}
+      }catch(e){}
+      
+      // Load session before getting data
+      await checkAuth();
+      loadAllData();
+  });
+
+  async function preloadPSD(designId) {
+      if (loadedDocumentId === designId) return;
+      while(isPreloading) { await new Promise(r => setTimeout(r, 100)); } 
+      if (loadedDocumentId === designId) return;
+      
+      isPreloading = true;
+      try {
+          const design = allDesigns.find(d => d.id === designId);
+          if(!design) { isPreloading = false; return; }
+          
+          let arrayBuffer;
+          if (cachedDesignId === design.id && cachedBuffer) {
+              arrayBuffer = cachedBuffer;
+          } else {
+              const response = await fetch(design.psdUrl);
+              arrayBuffer = await response.arrayBuffer();
+              cachedBuffer = arrayBuffer;
+              cachedDesignId = design.id;
+          }
+          
+          while(!isPhotopeaReady) { await new Promise(r => setTimeout(r, 500)); } 
+          
+          if (currentDesignId !== designId && bulkDesignId !== designId) {
+              isPreloading = false; return; 
+          }
+          
+          closePhotopeaDocument(); 
+          frame.contentWindow.postMessage(arrayBuffer, "*");
+          loadedDocumentId = design.id;
+      } catch(e) {
+          console.error("Preload error", e);
+      }
+      isPreloading = false;
+  }
+
+  function closePhotopeaDocument() {
+      frame.contentWindow.postMessage('try{ while(app.documents.length>0){app.activeDocument.close()} }catch(e){}', '*');
+      loadedDocumentId = null;
+  }
 
   function showAlert(title,msg,icon="✅"){document.getElementById('alertTitle').innerText=title;document.getElementById('alertMsg').innerText=msg;document.getElementById('alertIcon').innerText=icon;document.getElementById('customAlertModal').classList.add('active')}
   function closeCustomAlert(){document.getElementById('customAlertModal').classList.remove('active')}
   function showConfirm(title,msg){return new Promise(resolve=>{document.getElementById('confirmTitle').innerText=title;document.getElementById('confirmMsg').innerText=msg;document.getElementById('customConfirmModal').classList.add('active');document.getElementById('confirmBtnYes').onclick=()=>{document.getElementById('customConfirmModal').classList.remove('active');resolve(true)};document.getElementById('confirmBtnNo').onclick=()=>{document.getElementById('customConfirmModal').classList.remove('active');resolve(false)}})}
   function toggleTheme(){const wrapper=document.getElementById('app-wrapper'),body=document.body,menuItem=document.getElementById('theme-menu-item');wrapper.classList.toggle('light-theme');body.classList.toggle('light-theme');if(wrapper.classList.contains('light-theme')){menuItem.innerHTML='🌙 Switch to Dark Theme';localStorage.setItem('theme','light')}else{menuItem.innerHTML='☀️ Switch to Light Theme';localStorage.setItem('theme','dark')}}
   
-  window.addEventListener('DOMContentLoaded',()=>{frame.src="https://www.photopea.com#%7B%7D";try{const savedTheme=localStorage.getItem('theme'),menuItem=document.getElementById('theme-menu-item');if(savedTheme==='light'){document.getElementById('app-wrapper').classList.add('light-theme');document.body.classList.add('light-theme');menuItem.innerHTML='🌙 Switch to Dark Theme'}else{document.getElementById('app-wrapper').classList.remove('light-theme');document.body.classList.remove('light-theme');menuItem.innerHTML='☀️ Switch to Light Theme'}}catch(e){}loadAllData()});
-  
+  function showToastMessage(msg) {
+      const toast = document.getElementById('toast-container');
+      toast.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>${msg}</span>
+      `;
+      toast.classList.add('show');
+      setTimeout(() => { toast.classList.remove('show'); }, 2500);
+  }
+
+  function copyDesignLink(event, designId) {
+      event.stopPropagation();
+      const shareUrl = `${window.location.origin}/?design=${designId}`;
+      navigator.clipboard.writeText(shareUrl).then(() => {
+          showToastMessage("Link Copied!");
+      }).catch(err => {
+          console.error("Copy failed:", err);
+          showAlert("Error", "Could not copy link", "❌");
+      });
+  }
+
   window.addEventListener("message", async e => {
       if(e.data==="done"){
           isPhotopeaReady=true;
@@ -124,7 +368,6 @@
           return
       }
 
-      // SMART HANDSHAKE LISTENERS
       if (e.data === "NOT_LOADED") {
           if (window.handleNotLoaded) window.handleNotLoaded();
           return;
@@ -148,14 +391,12 @@
               }
               
               bulkCurrentIndex++;
-              processNextBulkName(design)
+              processNextBulkName(design);
           } else {
               if(currentDesignId){
                   const design=allDesigns.find(d=>d.id===currentDesignId);
                   if(design){
-                      // UPDATE LOCAL MEMORY FIRST
                       design.downloads = (design.downloads || 0) + 1;
-                      // THEN UPDATE DATABASE
                       await supabaseClient.from('designs').update({downloads: design.downloads}).eq('id',currentDesignId);
                   }
                   renderStats()
@@ -170,8 +411,7 @@
               a.download = (nameForFile || 'art') + "_Musaafir.jpg";
               a.click();
               
-              if(inputEl) inputEl.value = ""; // Clear input after download
-              
+              if(inputEl) inputEl.value = ""; 
               hidePhotopea();
               
               if(currentDesignId){
@@ -186,16 +426,142 @@
   function showPhotopea(){globalLoader.classList.add('active')}
   function hidePhotopea(){globalLoader.classList.remove('active')}
   
-  async function loadAllData(){try{const{data:catData,error:catErr}=await supabaseClient.from('categories').select('*').order('order');if(catErr)throw catErr;allCategories=catData||[];const{data:desData,error:desErr}=await supabaseClient.from('designs').select('*').order('order');if(desErr)throw desErr;allDesigns=(desData||[]).map(d=>({id:d.id,name:d.name,categoryId:d.category_id,psdUrl:d.psd_url,previewUrl:d.preview_url,status:d.status,order:d.order,downloads:d.downloads}));await loadSettings();renderAdmin();renderUser();renderStats()}catch(err){showAlert("Data Load Error","Could not fetch data.","❌")}}
+  async function loadAllData(){
+      try {
+          const{data:catData,error:catErr}=await supabaseClient.from('categories').select('*').order('order');
+          if(catErr)throw catErr;
+          allCategories=catData||[];
+          
+          const{data:desData,error:desErr}=await supabaseClient.from('designs').select('*').order('order');
+          if(desErr)throw desErr;
+          allDesigns=(desData||[]).map(d=>({id:d.id,name:d.name,categoryId:d.category_id,psdUrl:d.psd_url,previewUrl:d.preview_url,status:d.status,order:d.order,downloads:d.downloads}));
+          
+          await loadSettings();
+          
+          const urlParams = new URLSearchParams(window.location.search);
+          const sharedDesignId = urlParams.get('design');
+          if(sharedDesignId && allDesigns.some(d => d.id === sharedDesignId && d.status !== 'draft')) {
+              currentDesignId = sharedDesignId;
+              currentCategoryFilter = 'all';
+              
+              setTimeout(() => {
+                  const targetCard = document.getElementById('card-' + sharedDesignId);
+                  if (targetCard) {
+                      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      preloadPSD(sharedDesignId);
+                  }
+              }, 500);
+          }
+          
+          if(isAdminView) renderAdmin(); // Render roles UI
+          renderUser();
+          renderStats();
+      } catch(err){
+          showAlert("Data Load Error","Could not fetch data.","❌");
+      }
+  }
   
   function renderStats(){const totalGenerates=allDesigns.reduce((sum,d)=>sum+(d.downloads||0),0);document.getElementById('admin-stats-content').innerHTML=`<div style="display:flex;flex-direction:column;gap:15px;margin-top:15px;"><div style="background:rgba(139,92,246,.1);padding:15px;border-radius:10px;display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Total Designs</span><h2 style="margin:0;color:var(--text-main);">${allDesigns.length}</h2></div><div style="background:rgba(59,130,246,.1);padding:15px;border-radius:10px;display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Total Categories</span><h2 style="margin:0;color:var(--text-main);">${allCategories.length}</h2></div><div style="background:rgba(34,197,94,.1);padding:15px;border-radius:10px;display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Total Generates</span><h2 style="margin:0;color:var(--text-main);">${totalGenerates}</h2></div></div>`}
   
   async function loadSettings(){try{const{data,error}=await supabaseClient.from('settings').select('*');if(error)throw error;document.getElementById('contact-fb').href=data.find(s=>s.key==='fb')?.value||"#";document.getElementById('contact-wa').href=`https://wa.me/${data.find(s=>s.key==='wa')?.value||""}`;document.getElementById('contact-email').href=`mailto:${data.find(s=>s.key==='email')?.value||""}`;document.getElementById('setting-fb').value=data.find(s=>s.key==='fb')?.value||"";document.getElementById('setting-wa').value=data.find(s=>s.key==='wa')?.value||"";document.getElementById('setting-email').value=data.find(s=>s.key==='email')?.value||""}catch(e){}}
   
-  function renderAdmin(){document.getElementById('cat-list').innerHTML=allCategories.map(c=>`<div class="admin-item"><div class="admin-item-info"><h4>${c.name}</h4></div><div class="admin-actions"><button class="btn action-btn" onclick="moveItem('categories','${c.id}','up')">⬅️ Left</button><button class="btn action-btn" onclick="moveItem('categories','${c.id}','down')">➡️ Right</button><button class="btn action-btn" onclick="openEditModal('category','${c.id}')">✏️ Edit</button><button class="btn danger action-btn" onclick="deleteCategory('${c.id}')">Delete</button></div></div>`).join('')||'<p>No categories.</p>';const catOptions=allCategories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');document.getElementById('admin-category').innerHTML=catOptions;document.getElementById('edit-category').innerHTML=catOptions;document.getElementById('admin-list').innerHTML=allDesigns.map(d=>{const cat=allCategories.find(c=>c.id===d.categoryId),isPublished=d.status!=='draft';return `<div class="admin-item"><img src="${d.previewUrl}"><div class="admin-item-info"><h4>${d.name} <span class="status-badge ${isPublished?'status-published':'status-draft'}">${isPublished?'PUBLISHED':'DRAFT'}</span></h4><span>Cat: ${cat?cat.name:'Unknown'} | Downloads: <b>${d.downloads||0}</b></span></div><div class="admin-actions"><button class="btn action-btn" onclick="moveItem('designs','${d.id}','up')">⬆️</button><button class="btn action-btn" onclick="moveItem('designs','${d.id}','down')">⬇️</button><button class="btn action-btn" onclick="openBulkModal('${d.id}')" style="background:rgba(139,92,246,.2);color:#a78bfa;">📦 Bulk</button><button class="btn action-btn" onclick="togglePublish('${d.id}')">${isPublished?'👁️ Hide':'👁️ Show'}</button><button class="btn action-btn" onclick="openEditModal('design','${d.id}')">✏️ Edit</button><button class="btn danger action-btn" onclick="deleteDesign('${d.id}')">Delete</button></div></div>`}).join('')||'<p>No designs.</p>'}
+  function renderAdmin(){
+      // --> ROLE-BASED UI CONTROL <--
+      if (currentUserRole === 'editor') {
+          // Editor ko faltu tabs na dikhao
+          document.getElementById('tab-categories').style.display = 'none';
+          document.getElementById('tab-settings').style.display = 'none';
+          document.getElementById('tab-stats').style.display = 'none';
+      } else {
+          // Super Admin ko sab kuch dikhao
+          document.getElementById('tab-categories').style.display = 'block';
+          document.getElementById('tab-settings').style.display = 'block';
+          document.getElementById('tab-stats').style.display = 'block';
+      }
+
+      document.getElementById('cat-list').innerHTML=allCategories.map(c=>`<div class="admin-item"><div class="admin-item-info"><h4>${c.name}</h4></div><div class="admin-actions"><button class="btn action-btn" onclick="moveItem('categories','${c.id}','up')">⬅️ Left</button><button class="btn action-btn" onclick="moveItem('categories','${c.id}','down')">➡️ Right</button><button class="btn action-btn" onclick="openEditModal('category','${c.id}')">✏️ Edit</button><button class="btn danger action-btn" onclick="deleteCategory('${c.id}')">Delete</button></div></div>`).join('')||'<p>No categories.</p>';
+      const catOptions=allCategories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+      document.getElementById('admin-category').innerHTML=catOptions;
+      document.getElementById('edit-category').innerHTML=catOptions;
+      
+      document.getElementById('admin-list').innerHTML=allDesigns.map(d=>{
+          const cat=allCategories.find(c=>c.id===d.categoryId),isPublished=d.status!=='draft';
+          
+          let actionButtons = '';
+          // Super admin gets all buttons, Editor gets only Bulk and Copy Link
+          if (currentUserRole === 'super_admin') {
+              actionButtons = `
+                  <button class="btn action-btn" onclick="moveItem('designs','${d.id}','up')">⬆️</button>
+                  <button class="btn action-btn" onclick="moveItem('designs','${d.id}','down')">⬇️</button>
+                  <button class="btn action-btn" onclick="openBulkModal('${d.id}')" style="background:rgba(139,92,246,.2);color:#a78bfa;">📦 Bulk</button>
+                  <button class="btn action-btn" onclick="copyDesignLink(event, '${d.id}')" title="Copy Share Link">🔗</button>
+                  <button class="btn action-btn" onclick="togglePublish('${d.id}')">${isPublished?'👁️ Hide':'👁️ Show'}</button>
+                  <button class="btn action-btn" onclick="openEditModal('design','${d.id}')">✏️ Edit</button>
+                  <button class="btn danger action-btn" onclick="deleteDesign('${d.id}')">Delete</button>
+              `;
+          } else {
+              actionButtons = `
+                  <button class="btn action-btn" onclick="openBulkModal('${d.id}')" style="background:rgba(139,92,246,.2);color:#a78bfa;">📦 Bulk Generate</button>
+                  <button class="btn action-btn" onclick="copyDesignLink(event, '${d.id}')" title="Copy Share Link">🔗 Share Link</button>
+              `;
+          }
+
+          return `<div class="admin-item">
+              <img src="${d.previewUrl}">
+              <div class="admin-item-info">
+                  <h4>${d.name} <span class="status-badge ${isPublished?'status-published':'status-draft'}">${isPublished?'PUBLISHED':'DRAFT'}</span></h4>
+                  <span>Cat: ${cat?cat.name:'Unknown'} | Downloads: <b>${d.downloads||0}</b></span>
+              </div>
+              <div class="admin-actions">
+                  ${actionButtons}
+              </div>
+          </div>`
+      }).join('')||'<p>No designs.</p>'
+  }
   
-  function renderUser(){document.getElementById('category-bar').innerHTML=`<div class="cat-tab ${currentCategoryFilter==='all'?'active':''}" onclick="filterCategory('all')">All</div>`+allCategories.map(cat=>`<div class="cat-tab ${currentCategoryFilter===cat.id?'active':''}" onclick="filterCategory('${cat.id}')">${cat.name}</div>`).join('');let filtered=allDesigns.filter(d=>d.status!=='draft');if(currentCategoryFilter!=='all')filtered=filtered.filter(d=>d.categoryId===currentCategoryFilter);const grid=document.getElementById('design-grid');if(filtered.length===0){grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:60px 20px;"><h3>No designs found</h3></div>`;return}grid.innerHTML=filtered.map(d=>`<div class="design-card ${d.id===currentDesignId?'active':''}" id="card-${d.id}"><div class="img-container" onclick="toggleCard('${d.id}')"><img src="${d.previewUrl}"></div><div class="action-area"><input type="text" id="input-${d.id}" placeholder="Your Name"><button class="btn primary" id="btn-${d.id}" style="width:100%;padding:14px;font-size:16px" onclick="generateImage('${d.id}')">✨ Generate & Download</button></div></div>`).join('')}
-  function filterCategory(catId){currentCategoryFilter=catId;currentDesignId=null;renderUser()}function toggleCard(id){currentDesignId=currentDesignId===id?null:id;renderUser()}
+  function renderUser(){
+      document.getElementById('category-bar').innerHTML=`<div class="cat-tab ${currentCategoryFilter==='all'?'active':''}" onclick="filterCategory('all')">All</div>`+allCategories.map(cat=>`<div class="cat-tab ${currentCategoryFilter===cat.id?'active':''}" onclick="filterCategory('${cat.id}')">${cat.name}</div>`).join('');
+      let filtered=allDesigns.filter(d=>d.status!=='draft');
+      if(currentCategoryFilter!=='all')filtered=filtered.filter(d=>d.categoryId===currentCategoryFilter);
+      const grid=document.getElementById('design-grid');
+      if(filtered.length===0){grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:60px 20px;"><h3>No designs found</h3></div>`;return}
+      
+      grid.innerHTML=filtered.map(d=>`
+          <div class="design-card ${d.id===currentDesignId?'active':''}" id="card-${d.id}">
+              <div class="img-container" onclick="toggleCard('${d.id}')">
+                  <img src="${d.previewUrl}">
+                  <button class="user-copy-btn" onclick="copyDesignLink(event, '${d.id}')">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg> Copy
+                  </button>
+              </div>
+              <div class="action-area">
+                  <input type="text" id="input-${d.id}" placeholder="Your Name">
+                  <button class="btn primary" id="btn-${d.id}" style="width:100%;padding:14px;font-size:16px" onclick="generateImage('${d.id}')">✨ Generate & Download</button>
+              </div>
+          </div>`).join('')
+  }
+  
+  function filterCategory(catId){
+      currentCategoryFilter=catId;
+      currentDesignId=null; 
+      closePhotopeaDocument(); 
+      renderUser();
+  }
+  
+  function toggleCard(id){
+      if(currentDesignId === id) {
+          currentDesignId = null;
+          closePhotopeaDocument();
+      } else {
+          if(currentDesignId !== null) closePhotopeaDocument();
+          currentDesignId = id;
+          preloadPSD(id);
+      }
+      renderUser();
+  }
   
   async function moveItem(store,id,dir){let items=store==='designs'?[...allDesigns]:[...allCategories],idx=items.findIndex(i=>i.id===id);if(idx===-1)return;if(dir==='up'&&idx>0){let t=items[idx];items[idx]=items[idx-1];items[idx-1]=t}else if(dir==='down'&&idx<items.length-1){let t=items[idx];items[idx]=items[idx+1];items[idx+1]=t}else return;for(let i=0;i<items.length;i++){items[i].order=i+1;await supabaseClient.from(store).update({order:items[i].order}).eq('id',items[i].id)}loadAllData()}
   async function togglePublish(id){const d=allDesigns.find(x=>x.id===id);await supabaseClient.from('designs').update({status:d.status==='draft'?'published':'draft'}).eq('id',id);loadAllData()}
@@ -217,7 +583,6 @@
           const dP=await resP.json(),dPr=await resPr.json();
           if(!dP.secure_url||!dPr.secure_url)throw new Error("Upload failed.");
           
-          // CHANGE APPLIED HERE: Find the minimum order and subtract 1
           const minO = allDesigns.length > 0 ? Math.min(...allDesigns.map(d => d.order || 0)) - 1 : 1;
           
           await supabaseClient.from('designs').insert([{id:'d_'+Date.now(),name:n,category_id:c,psd_url:dP.secure_url,preview_url:dPr.secure_url,status:'published',order:minO,downloads:0}]);
@@ -254,19 +619,9 @@
       
       const processPSD=async()=>{
           try{
-              // CACHING APPLIED HERE
-              let arrayBuffer;
-              if (cachedDesignId === design.id && cachedBuffer) {
-                  arrayBuffer = cachedBuffer;
-              } else {
-                  const response = await fetch(design.psdUrl);
-                  arrayBuffer = await response.arrayBuffer();
-                  cachedBuffer = arrayBuffer;
-                  cachedDesignId = design.id;
-              }
-
-              const safeText=text.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'');
+              await preloadPSD(design.id);
               
+              const safeText=text.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'');
               const changeTextScript=`
                   try {
                       if (app.documents.length > 0) {
@@ -297,13 +652,11 @@
                   } catch(e) { app.echoToOE("ERROR: " + e.message); }
               `;
               
-              // CHANGED TO JPG
               const saveImageScript = `try { app.activeDocument.saveToOE("jpg"); } catch(e) { app.echoToOE("ERROR: " + e.message); }`;
 
               let retryCount = 0;
               window.handleNotLoaded = () => {
                   retryCount++;
-                  // CHANGED FROM 20 TO 40
                   if (retryCount > 40) {
                       hidePhotopea();
                       showAlert("Error", "Timeout loading PSD.", "❌");
@@ -324,12 +677,11 @@
                   }, 300);
               };
 
-              frame.contentWindow.postMessage(arrayBuffer,"*");
-              frame.contentWindow.postMessage(changeTextScript,"*");
+              frame.contentWindow.postMessage(changeTextScript, "*"); 
               
           }catch(err){
               hidePhotopea();
-              showAlert("Download Error","Could not fetch design file.","❌");
+              showAlert("Error","Could not process file.","❌");
               resetUI(cardId)
           }
       };
@@ -340,8 +692,7 @@
           setTimeout(()=>{
               if(!isPhotopeaReady){
                   isPhotopeaReady=true;
-                  pendingGeneration();
-                  pendingGeneration=null
+                  if(pendingGeneration) { pendingGeneration(); pendingGeneration=null; }
               }
           },8000)
       }
@@ -355,8 +706,32 @@
       }
   }
   
-  function openBulkModal(id){bulkDesignId=id;document.getElementById('bulkNamesInput').value='';document.getElementById('bulkNamesInput').disabled=false;document.getElementById('bulkStartBtn').style.display='block';document.getElementById('bulkCancelBtn').innerText='Cancel';document.getElementById('bulkProgressContainer').style.display='none';document.getElementById('bulkGenerateModal').classList.add('active')}
-  function closeBulkModal(){if(isBulkGenerating){showConfirm("Stop?","Stop?").then(res=>{if(res){isBulkGenerating=false;hidePhotopea();document.getElementById('bulkGenerateModal').classList.remove('active')}})}else{document.getElementById('bulkGenerateModal').classList.remove('active')}}
+  function openBulkModal(id){
+      bulkDesignId=id;
+      document.getElementById('bulkNamesInput').value='';
+      document.getElementById('bulkNamesInput').disabled=false;
+      document.getElementById('bulkStartBtn').style.display='block';
+      document.getElementById('bulkCancelBtn').innerText='Cancel';
+      document.getElementById('bulkProgressContainer').style.display='none';
+      document.getElementById('bulkGenerateModal').classList.add('active');
+      preloadPSD(id);
+  }
+  
+  function closeBulkModal(){
+      if(isBulkGenerating){
+          showConfirm("Stop?","Stop?").then(res=>{
+              if(res){
+                  isBulkGenerating=false;
+                  hidePhotopea();
+                  closePhotopeaDocument(); 
+                  document.getElementById('bulkGenerateModal').classList.remove('active')
+              }
+          })
+      }else{
+          closePhotopeaDocument(); 
+          document.getElementById('bulkGenerateModal').classList.remove('active')
+      }
+  }
   
   async function startBulkGeneration(){
       const names=document.getElementById('bulkNamesInput').value.split('\n').map(n=>n.trim()).filter(n=>n!=='');
@@ -377,7 +752,28 @@
       document.getElementById('bulkProgressContainer').style.display='block';
       updateBulkProgress();
       showPhotopea();
-      processNextBulkName(design)
+      
+      const loadAndStart = async () => {
+          try {
+              await preloadPSD(design.id);
+              setTimeout(() => { processNextBulkName(design); }, 500);
+          } catch(err) {
+              hidePhotopea();
+              showAlert("Error", "Could not load file.", "❌");
+              isBulkGenerating = false;
+          }
+      };
+
+      if (isPhotopeaReady) loadAndStart();
+      else {
+          pendingGeneration = loadAndStart;
+          setTimeout(() => {
+              if (!isPhotopeaReady) {
+                  isPhotopeaReady = true;
+                  if(pendingGeneration) { pendingGeneration(); pendingGeneration = null; }
+              }
+          }, 8000);
+      }
   }
   
   function updateBulkProgress(){document.getElementById('bulkProgressText').innerText=`Processing ${bulkCurrentIndex+1} of ${bulkQueue.length}...`;document.getElementById('bulkProgressBar').style.width=((bulkCurrentIndex/bulkQueue.length)*100)+'%'}
@@ -392,103 +788,74 @@
       globalLoaderText.innerText=`Processing ${bulkCurrentIndex+1} of ${bulkQueue.length}...`;
       
       const processPSD=async()=>{
-          try{
-              // CACHING APPLIED HERE
-              let arrayBuffer;
-              if (cachedDesignId === design.id && cachedBuffer) {
-                  arrayBuffer = cachedBuffer;
-              } else {
-                  const response = await fetch(design.psdUrl);
-                  arrayBuffer = await response.arrayBuffer();
-                  cachedBuffer = arrayBuffer;
-                  cachedDesignId = design.id;
-              }
-
-              const safeText=text.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'');
-              
-              const changeTextScript=`
-                  try {
-                      if (app.documents.length > 0) {
-                          var doc = app.activeDocument;
-                          var newText = "${safeText}";
-                          var found = false;
-                          function findLayer(layers){
-                              for(var i=0;i<layers.length;i++){
-                                  var l=layers[i];
-                                  try {
-                                      if(l.typename==="LayerSet"){ findLayer(l.layers) }
-                                      else if(l.kind===LayerKind.TEXT){
-                                          if(l.name && l.name.toUpperCase()==="NAME"){
-                                              l.textItem.contents=newText;
-                                              found=true;
-                                              break;
-                                          }
+          const safeText=text.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'');
+          
+          const changeTextScript=`
+              try {
+                  if (app.documents.length > 0) {
+                      var doc = app.activeDocument;
+                      var newText = "${safeText}";
+                      var found = false;
+                      function findLayer(layers){
+                          for(var i=0;i<layers.length;i++){
+                              var l=layers[i];
+                              try {
+                                  if(l.typename==="LayerSet"){ findLayer(l.layers) }
+                                  else if(l.kind===LayerKind.TEXT){
+                                      if(l.name && l.name.toUpperCase()==="NAME"){
+                                          l.textItem.contents=newText;
+                                          found=true;
+                                          break;
                                       }
-                                  } catch(e){}
-                              }
+                                  }
+                              } catch(e){}
                           }
-                          findLayer(doc.layers);
-                          if(found) { app.echoToOE("TEXT_APPLIED"); } 
-                          else { app.echoToOE("ERROR: 'NAME' layer not found in template."); }
-                      } else {
-                          app.echoToOE("NOT_LOADED");
                       }
-                  } catch(e) { app.echoToOE("ERROR: " + e.message); }
-              `;
-              
-              // CHANGED TO JPG
-              const saveImageScript = `try { app.activeDocument.saveToOE("jpg"); } catch(e) { app.echoToOE("ERROR: " + e.message); }`;
-
-              let retryCount = 0;
-              window.handleNotLoaded = () => {
-                  retryCount++;
-                  // CHANGED FROM 20 TO 40
-                  if (retryCount > 40) {
-                      hidePhotopea();
-                      showAlert("Error", "Timeout loading PSD.", "❌");
-                      isBulkGenerating = false;
-                      window.handleNotLoaded = null;
-                      window.handleTextApplied = null;
-                      return;
+                      findLayer(doc.layers);
+                      if(found) { app.echoToOE("TEXT_APPLIED"); } 
+                      else { app.echoToOE("ERROR: 'NAME' layer not found in template."); }
+                  } else {
+                      app.echoToOE("NOT_LOADED");
                   }
-                  setTimeout(() => frame.contentWindow.postMessage(changeTextScript, "*"), 500);
-              };
+              } catch(e) { app.echoToOE("ERROR: " + e.message); }
+          `;
+          
+          const saveImageScript = `try { app.activeDocument.saveToOE("jpg"); } catch(e) { app.echoToOE("ERROR: " + e.message); }`;
 
-              window.handleTextApplied = () => {
+          let retryCount = 0;
+          window.handleNotLoaded = () => {
+              retryCount++;
+              if (retryCount > 40) {
+                  hidePhotopea();
+                  showAlert("Error", "Timeout loading PSD.", "❌");
+                  isBulkGenerating = false;
                   window.handleNotLoaded = null;
                   window.handleTextApplied = null;
-                  if (!isBulkGenerating) return; 
-                  setTimeout(() => {
-                      if (isBulkGenerating) frame.contentWindow.postMessage(saveImageScript, "*");
-                  }, 300);
-              };
+                  return;
+              }
+              setTimeout(() => frame.contentWindow.postMessage(changeTextScript, "*"), 500);
+          };
 
-              frame.contentWindow.postMessage(arrayBuffer,"*");
-              frame.contentWindow.postMessage(changeTextScript,"*");
-              
-          }catch(err){
-              hidePhotopea();
-              showAlert("Download Error","Could not fetch design file.","❌");
-              isBulkGenerating=false
-          }
+          window.handleTextApplied = () => {
+              window.handleNotLoaded = null;
+              window.handleTextApplied = null;
+              if (!isBulkGenerating) return; 
+              setTimeout(() => {
+                  if (isBulkGenerating) frame.contentWindow.postMessage(saveImageScript, "*");
+              }, 300);
+          };
+
+          frame.contentWindow.postMessage(changeTextScript, "*");
       };
       
       if(isPhotopeaReady)processPSD();
-      else{
-          pendingGeneration=processPSD;
-          setTimeout(()=>{
-              if(!isPhotopeaReady){
-                  isPhotopeaReady=true;
-                  pendingGeneration();
-                  pendingGeneration=null
-              }
-          },8000)
-      }
+      else { /* Handled by loadAndStart */ } 
   }
   
   async function finishBulkGeneration(){
       globalLoaderText.innerText="Processing complete...";
       document.getElementById('bulkProgressBar').style.width='100%';
+      
       bulkZip.generateAsync({type:"blob"}).then(async content=>{
           const a=document.createElement("a");
           a.href=URL.createObjectURL(content);
@@ -497,6 +864,7 @@
           URL.revokeObjectURL(a.href);
           isBulkGenerating=false;
           hidePhotopea();
+          closePhotopeaDocument(); 
           document.getElementById('bulkGenerateModal').classList.remove('active');
           loadAllData()
       })
@@ -510,8 +878,21 @@
   function hideAllViews(){document.getElementById('user-view').style.display='none';document.getElementById('contact-page').style.display='none';document.getElementById('about-page').style.display='none';document.getElementById('admin-view').style.display='none'}
   function closeModal(e){if(e.target.classList.contains('modal-overlay'))e.target.classList.remove('active')}
   
-  let isAdmin=false;
-  function toggleView(){isAdmin=!isAdmin;hideAllViews();if(isAdmin){document.getElementById('admin-view').style.display='block';loadAllData()}else{document.getElementById('user-view').style.display='block'}}
+  // Security Update in toggleView
+  function toggleView(){
+      if (!currentUser) return showAlert("Locked", "Please login to access Admin Panel.", "🔒");
+      
+      isAdminView = !isAdminView;
+      hideAllViews();
+      if(isAdminView){
+          document.getElementById('admin-view').style.display='block';
+          renderAdmin(); // Apply roles
+          loadAllData();
+      }else{
+          document.getElementById('user-view').style.display='block';
+      }
+  }
+  
   function switchTab(tabName,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('panel-'+tabName).classList.add('active')}
 </script>
 </body>
