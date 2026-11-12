@@ -202,18 +202,35 @@
   let currentUserRole = null;
   let isAdminView = false; 
 
+  // ---> YAHAN SECURE LOGIC WAPIS LAAI GAYI HAI <---
   async function checkAuth() {
       const { data: { session } } = await supabaseClient.auth.getSession();
+      
       if (session) {
           currentUser = session.user;
           try {
-              const { data } = await supabaseClient.from('user_roles').select('role').eq('id', currentUser.id).single();
-              if (data) currentUserRole = data.role;
-          } catch(e) { console.error("Role Error", e); }
+              // Asal Database call (Ab RLS theek honay ke baad ye chalegi)
+              const { data, error } = await supabaseClient
+                  .from('user_roles')
+                  .select('role')
+                  .eq('id', currentUser.id)
+                  .single();
+                  
+              if (data) {
+                  currentUserRole = data.role;
+              } else {
+                  console.log("No specific role found in database, defaulting to editor.");
+                  currentUserRole = 'editor';
+              }
+          } catch(e) { 
+              console.error("Role Error", e); 
+              currentUserRole = 'editor'; 
+          }
       } else {
           currentUser = null;
           currentUserRole = null;
       }
+      
       updateMenuUI();
   }
 
@@ -251,6 +268,7 @@
       
       closeLoginModal();
       showToastMessage("Welcome to Admin! ✅");
+      
       await checkAuth(); 
       
       if(!isAdminView) toggleView();
@@ -457,8 +475,6 @@
   async function loadSettings(){try{const{data,error}=await supabaseClient.from('settings').select('*');if(error)throw error;document.getElementById('contact-fb').href=data.find(s=>s.key==='fb')?.value||"#";document.getElementById('contact-wa').href=`https://wa.me/${data.find(s=>s.key==='wa')?.value||""}`;document.getElementById('contact-email').href=`mailto:${data.find(s=>s.key==='email')?.value||""}`;document.getElementById('setting-fb').value=data.find(s=>s.key==='fb')?.value||"";document.getElementById('setting-wa').value=data.find(s=>s.key==='wa')?.value||"";document.getElementById('setting-email').value=data.find(s=>s.key==='email')?.value||""}catch(e){}}
   
   function renderAdmin(){
-      // --> ROLE-BASED UI CONTROL <--
-      // YAHAN CONDITION THEEK KAR DI GAYI HAI
       if (currentUserRole !== 'super_admin') {
           document.getElementById('tab-categories').style.display = 'none';
           document.getElementById('tab-settings').style.display = 'none';
@@ -478,7 +494,7 @@
           const cat=allCategories.find(c=>c.id===d.categoryId),isPublished=d.status!=='draft';
           
           let actionButtons = '';
-          // SIRF SUPER ADMIN KO SARE BUTTONS DIKHAO
+          
           if (currentUserRole === 'super_admin') {
               actionButtons = `
                   <button class="btn action-btn" onclick="moveItem('designs','${d.id}','up')">⬆️</button>
