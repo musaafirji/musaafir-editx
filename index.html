@@ -174,7 +174,17 @@
     </div>
     
     <div id="panel-designs" class="panel active">
-      <div class="card"><h3 style="margin-top:0;font-weight:600;">Add New Design</h3><div class="form-row"><label>Design Name</label><input type="text" id="admin-name" placeholder="e.g., Malik Glass Effect"></div><div class="form-row"><label>Category</label><select id="admin-category"></select></div><div class="form-row"><label>Preview Image (JPG/PNG)</label><input type="file" id="admin-preview" accept="image/*"></div><div class="form-row"><label>PSD File (With Effects)</label><input type="file" id="admin-file" accept=".psd"></div><button class="btn primary" onclick="saveDesignAdmin()" style="padding:14px 25px;font-size:16px;width:100%;">⬆ Save Design</button></div>
+      <div class="card">
+        <h3 style="margin-top:0;font-weight:600;">Add New Design</h3>
+        <div class="form-row"><label>Design Name</label><input type="text" id="admin-name" placeholder="e.g., Malik Glass Effect"></div>
+        <div class="form-row"><label>Category</label><select id="admin-category"></select></div>
+        <div class="form-row"><label>Preview Image (JPG/PNG)</label><input type="file" id="admin-preview" accept="image/*"></div>
+        
+        <!-- Wapis File Input -->
+        <div class="form-row"><label>PSD File (With Effects)</label><input type="file" id="admin-file" accept=".psd"></div>
+        
+        <button class="btn primary" onclick="saveDesignAdmin()" style="padding:14px 25px;font-size:16px;width:100%;">⬆ Save Design</button>
+      </div>
       <div class="card"><h3 style="margin-top:0;font-weight:600;">Manage Designs</h3><div id="admin-list"></div></div>
     </div>
     
@@ -251,6 +261,10 @@
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   
+  // --- YAHAN APNI DBIMG API KEY DALEIN ---
+  const DBIMG_API_KEY = "dbimg_slNhe3xbQXsAT0OtoZmIKXuZDt7C5Td2UeCs37fekss"; 
+  const DBIMG_UPLOAD_URL = "https://dbimg.app/api/upload";
+
   let allDesigns=[],allCategories=[],currentDesignId=null,currentCategoryFilter='all',editingId=null,editingType='';
   let pendingDesigns = [];
   
@@ -794,25 +808,71 @@
   function closeEditModal(){document.getElementById('editModal').classList.remove('active')}
   async function saveEdit(){const n=document.getElementById('edit-name').value.trim();if(!n)return;if(editingType==='design'){await supabaseClient.from('designs').update({name:n,category_id:document.getElementById('edit-category').value}).eq('id',editingId)}else{await supabaseClient.from('categories').update({name:n}).eq('id',editingId)}closeEditModal();loadAllData()}
   
+  // --- UPDATED SAVE FUNCTION FOR DBIMG API ---
   async function saveDesignAdmin(){
-      const n=document.getElementById('admin-name').value.trim(),c=document.getElementById('admin-category').value,p=document.getElementById('admin-file').files[0],pr=document.getElementById('admin-preview').files[0];
-      if(!n||!p||!pr)return showAlert("Missing","Fill all.","⚠️");
-      const btn=document.querySelector('button[onclick="saveDesignAdmin()"]'),txt=btn.innerHTML;
-      btn.innerHTML='<span class="btn-spinner"></span> Uploading...';btn.disabled=true;
-      const fdP=new FormData();fdP.append('file',p);fdP.append('upload_preset',"test_preset");
-      const fdPr=new FormData();fdPr.append('file',pr);fdPr.append('upload_preset',"test_preset");
+      const n = document.getElementById('admin-name').value.trim();
+      const c = document.getElementById('admin-category').value;
+      const p = document.getElementById('admin-file').files[0];
+      const pr = document.getElementById('admin-preview').files[0];
+      
+      if(!n || !p || !pr) return showAlert("Missing", "Please fill all fields and select both files.", "⚠️");
+      
+      const btn = document.querySelector('button[onclick="saveDesignAdmin()"]');
+      const txt = btn.innerHTML; 
+      btn.innerHTML='<span class="btn-spinner"></span> Uploading PSD & Preview...'; 
+      btn.disabled=true;
+      
+      const fdPr = new FormData(); fdPr.append('file', pr); fdPr.append('upload_preset', "test_preset");
+      
+      const fdP = new FormData(); 
+      fdP.append('file', p); 
+      
       try{
-          const[resP,resPr]=await Promise.all([fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`,{method:'POST',body:fdP}),fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`,{method:'POST',body:fdPr})]);
-          const dP=await resP.json(),dPr=await resPr.json();
-          if(!dP.secure_url||!dPr.secure_url)throw new Error("Upload failed.");
+          // 1. Upload Preview to Cloudinary
+          const resPr = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`,{method:'POST',body:fdPr});
+          const dPr = await resPr.json();
+          if(!dPr.secure_url) throw new Error("Preview upload failed.");
+          
+          // 2. Upload PSD to dbimg API
+          const resP = await fetch(DBIMG_UPLOAD_URL, {
+              method: 'POST',
+              headers: {
+                  'Authorization': `Bearer ${DBIMG_API_KEY}`,
+                  // 'Content-Type': 'multipart/form-data' // Browser khud set karta hai, manually set nahi karna chahiye
+              },
+              body: fdP
+          });
+          
+          const dP = await resP.json();
+          
+          // dbimg response se directUrl nikalna
+          if(!dP.directUrl) throw new Error("PSD upload failed. " + (dP.error || ""));
+          const psdDirectLink = "https://dbimg.app" + dP.directUrl;
           
           const minO = allDesigns.length > 0 ? Math.min(...allDesigns.map(d => d.order || 0)) - 1 : 1;
           
-          await supabaseClient.from('designs').insert([{id:'d_'+Date.now(),name:n,category_id:c,psd_url:dP.secure_url,preview_url:dPr.secure_url,status:'published',order:minO,downloads:0}]);
-          document.getElementById('admin-name').value='';document.getElementById('admin-file').value='';document.getElementById('admin-preview').value='';
-          btn.innerHTML=txt;btn.disabled=false;
-          showAlert("Success!","Design Published!","🎉");loadAllData()
-      }catch(err){ showAlert("Failed",err.message,"❌"); btn.innerHTML=txt;btn.disabled=false }
+          await supabaseClient.from('designs').insert([{
+              id:'d_'+Date.now(),
+              name:n,
+              category_id:c,
+              psd_url: psdDirectLink, 
+              preview_url:dPr.secure_url,
+              status:'published',
+              order:minO,
+              downloads:0
+          }]);
+          
+          document.getElementById('admin-name').value='';
+          document.getElementById('admin-file').value='';
+          document.getElementById('admin-preview').value='';
+          
+          btn.innerHTML=txt; btn.disabled=false;
+          showAlert("Success!","Design Published!","🎉"); 
+          loadAllData()
+      }catch(err){ 
+          showAlert("Failed", err.message, "❌"); 
+          btn.innerHTML=txt;btn.disabled=false 
+      }
   }
   
   async function deleteDesign(id){
