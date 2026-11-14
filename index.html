@@ -260,10 +260,6 @@
   const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  
-  // --- YAHAN APNI DBIMG API KEY DALEIN ---
-  const DBIMG_API_KEY = "dbimg_slNhe3xbQXsAT0OtoZmIKXuZDt7C5Td2UeCs37fekss"; 
-  const DBIMG_UPLOAD_URL = "https://dbimg.app/api/upload";
 
   let allDesigns=[],allCategories=[],currentDesignId=null,currentCategoryFilter='all',editingId=null,editingType='';
   let pendingDesigns = [];
@@ -808,7 +804,7 @@
   function closeEditModal(){document.getElementById('editModal').classList.remove('active')}
   async function saveEdit(){const n=document.getElementById('edit-name').value.trim();if(!n)return;if(editingType==='design'){await supabaseClient.from('designs').update({name:n,category_id:document.getElementById('edit-category').value}).eq('id',editingId)}else{await supabaseClient.from('categories').update({name:n}).eq('id',editingId)}closeEditModal();loadAllData()}
   
-  // --- UPDATED SAVE FUNCTION FOR DBIMG API ---
+  // --- UPDATED SAVE FUNCTION (Via Supabase Proxy) ---
   async function saveDesignAdmin(){
       const n = document.getElementById('admin-name').value.trim();
       const c = document.getElementById('admin-category').value;
@@ -823,30 +819,28 @@
       btn.disabled=true;
       
       const fdPr = new FormData(); fdPr.append('file', pr); fdPr.append('upload_preset', "test_preset");
-      
-      const fdP = new FormData(); 
-      fdP.append('file', p); 
+      const fdP = new FormData(); fdP.append('file', p); 
       
       try{
-          // 1. Upload Preview to Cloudinary
+          // 1. Upload Preview to Cloudinary (Yeh waisa hi rahega)
           const resPr = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`,{method:'POST',body:fdPr});
           const dPr = await resPr.json();
           if(!dPr.secure_url) throw new Error("Preview upload failed.");
           
-          // 2. Upload PSD to dbimg API
-          const resP = await fetch(DBIMG_UPLOAD_URL, {
+          // 2. Upload PSD to Supabase Edge Function (Proxy) - CORS Fixed
+          const resP = await fetch(`${SUPABASE_URL}/functions/v1/upload-to-dbimg`, {
               method: 'POST',
               headers: {
-                  'Authorization': `Bearer ${DBIMG_API_KEY}`,
-                  // 'Content-Type': 'multipart/form-data' // Browser khud set karta hai, manually set nahi karna chahiye
+                  'Authorization': `Bearer ${SUPABASE_KEY}` // Edge function call ke liye key zaroori hai
               },
-              body: fdP
+              body: fdP 
           });
           
           const dP = await resP.json();
           
-          // dbimg response se directUrl nikalna
-          if(!dP.directUrl) throw new Error("PSD upload failed. " + (dP.error || ""));
+          if(!resP.ok) throw new Error(dP.error || "PSD upload failed on server.");
+          if(!dP.directUrl) throw new Error("PSD upload failed. Invalid response.");
+          
           const psdDirectLink = "https://dbimg.app" + dP.directUrl;
           
           const minO = allDesigns.length > 0 ? Math.min(...allDesigns.map(d => d.order || 0)) - 1 : 1;
