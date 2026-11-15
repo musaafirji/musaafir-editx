@@ -263,7 +263,7 @@
   const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg";
   
-  // ✅ WAPAS PURANA STABLE PROXY URL LAGA DIYA HAI
+  // ✅ STABLE PROXY URL
   const CLOUDFLARE_PROXY_URL = "https://psd-proxy.musaafir-ji.workers.dev"; 
   
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -283,6 +283,15 @@
   let loadedDocumentId = null;
   let isPreloading = false;
   let loadedFonts = new Set();   
+
+  // ✅ Cloudinary images ko fast load karne ka function
+  function getOptimizedCloudinaryUrl(url) {
+      if (!url) return '';
+      if (url.includes('res.cloudinary.com') && url.includes('/image/upload/')) {
+          return url.replace('/image/upload/', '/image/upload/q_auto,f_auto,w_600/');
+      }
+      return url; 
+  }
 
   // --- AUTHENTICATION SYSTEM ---
   async function checkAuth() {
@@ -361,7 +370,8 @@
           if(desErr)throw desErr;
           allDesigns=(desData||[]).map(d=>({
               id:d.id, name:d.name, categoryId:d.category_id, psdUrl:d.psd_url, 
-              previewUrl:d.preview_url, fontUrl:d.font_url, status:d.status, order:d.order, downloads:d.downloads
+              previewUrl:getOptimizedCloudinaryUrl(d.preview_url), // ✅ Optimized URL
+              fontUrl:d.font_url, status:d.status, order:d.order, downloads:d.downloads
           }));
           
           if (currentUser) {
@@ -538,7 +548,7 @@
       if(pendingDesigns.length === 0) { list.innerHTML = '<p>No pending designs.</p>'; return; }
       list.innerHTML = pendingDesigns.map(d => `
           <div class="admin-item">
-              <img src="${d.preview_url}">
+              <img src="${getOptimizedCloudinaryUrl(d.preview_url)}" loading="lazy" decoding="async">
               <div class="admin-item-info"><h4>${d.name} <span class="status-badge status-pending">PENDING</span></h4></div>
               <div class="admin-actions">
                   <button class="btn primary action-btn" onclick="approveDesign('${d.id}')">✅ Approve</button>
@@ -585,7 +595,7 @@
               `;
           }
           return `<div class="admin-item">
-              <img src="${d.previewUrl}">
+              <img src="${d.previewUrl}" loading="lazy" decoding="async">
               <div class="admin-item-info">
                   <h4>${d.name} <span class="status-badge status-published">PUBLISHED</span></h4>
                   <span>Cat: ${cat?cat.name:'Unknown'} | Downloads: <b>${d.downloads||0}</b></span>
@@ -605,7 +615,8 @@
       grid.innerHTML=filtered.map(d=>`
           <div class="design-card ${d.id===currentDesignId?'active':''}" id="card-${d.id}">
               <div class="img-container" onclick="toggleCard('${d.id}')">
-                  <img src="${d.previewUrl}">
+                  <!-- ✅ Lazy Loading and optimized URL applied here -->
+                  <img src="${d.previewUrl}" loading="lazy" decoding="async" style="min-height: 200px; background: #111;">
                   <button class="user-copy-btn" onclick="copyDesignLink(event, '${d.id}')">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy
                   </button>
@@ -640,7 +651,7 @@
           if (cachedDesignId === design.id && cachedBuffer) {
               arrayBuffer = cachedBuffer;
           } else {
-              // ✅ STABLE CLOUDFLARE PROXY
+              // ✅ CLOUDFLARE PROXY FOR PSD
               const proxyUrl = `${CLOUDFLARE_PROXY_URL}?url=${encodeURIComponent(design.psdUrl)}`;
               console.log("▶ [preload] Fetching via Cloudflare...");
               
@@ -669,9 +680,8 @@
           
           if (design.fontUrl && !loadedFonts.has(design.fontUrl)) {
               console.log("▶ [preload] Loading font:", design.fontUrl);
-              // ✅ FONT BHI STABLE PROXY SE LOAD HOGA
-              const proxiedFontUrl = `${CLOUDFLARE_PROXY_URL}?url=${encodeURIComponent(design.fontUrl)}`;
-              frame.contentWindow.postMessage(`try{ app.open("${proxiedFontUrl}"); }catch(e){}`, "*");
+              // ✅ FONT DIRECT CLOUDINARY SE LOAD HOGA
+              frame.contentWindow.postMessage(`try{ app.open("${design.fontUrl}"); }catch(e){}`, "*");
               await new Promise(r => setTimeout(r, 2500));
               loadedFonts.add(design.fontUrl);
           }
