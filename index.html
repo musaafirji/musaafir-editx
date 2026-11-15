@@ -262,6 +262,10 @@
 <script>
   const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg";
+  
+  // ✅ CLOUDFLARE PROXY URL ADD KIYA GAYA HAI
+  const CLOUDFLARE_PROXY_URL = "https://psd-proxy.musaafir-ji.workers.dev"; 
+  
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let allDesigns=[],allCategories=[],currentDesignId=null,currentCategoryFilter='all',editingId=null,editingType='';
@@ -278,7 +282,7 @@
   let cachedDesignId = null;
   let loadedDocumentId = null;
   let isPreloading = false;
-  let loadedFonts = new Set();   // Track fonts already loaded in Photopea session
+  let loadedFonts = new Set();   
 
   // --- AUTHENTICATION SYSTEM ---
   async function checkAuth() {
@@ -459,15 +463,19 @@
       const txt = btn.innerHTML; btn.innerHTML = 'Uploading...'; btn.disabled = true;
       
       const fdPr = new FormData(); fdPr.append('file', pr); fdPr.append('upload_preset', "test_preset");
-      const fdP = new FormData(); fdP.append('file', p); 
-      const fdF = new FormData(); fdF.append('file', f); 
-      fdF.append('upload_preset', "test_preset"); // FONT UPLOAD PRESET ADDED
+      const fdF = new FormData(); fdF.append('file', f); fdF.append('upload_preset', "test_preset");
+      const fdP = new FormData(); fdP.append('file', p); fdP.append('upload_preset', "test_preset");
       
       try {
           const resPr = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`, {method:'POST',body:fdPr});
           const dPr = await resPr.json();
           if(!dPr.secure_url) throw new Error("Preview upload failed.");
           
+          const resF = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/raw/upload`,{method:'POST',body:fdF});
+          const dF = await resF.json();
+          if(!resF.ok || !dF.secure_url) throw new Error(dF.error?.message || "Font upload failed.");
+          const fontDirectLink = dF.secure_url;
+
           const resP = await fetch(`${SUPABASE_URL}/functions/v1/upload-to-dbimg`, {
               method: 'POST', headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` }, body: fdP 
           });
@@ -475,14 +483,6 @@
           if(!resP.ok) throw new Error(dP.error || "PSD upload failed on server.");
           if(!dP.directUrl) throw new Error("PSD upload returned invalid URL.");
           const psdDirectLink = "https://dbimg.app" + dP.directUrl;
-
-          // FONT UPLOAD TO CLOUDINARY RAW ENDPOINT
-          const resF = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/raw/upload`, {
-              method: 'POST', body: fdF 
-          });
-          const dF = await resF.json();
-          if(!resF.ok || !dF.secure_url) throw new Error(dF.error?.message || "Font upload failed. Please check file type.");
-          const fontDirectLink = dF.secure_url;
           
           await supabaseClient.from('designs').insert([{
               id:'d_'+Date.now(), name:n, category_id:c, psd_url:psdDirectLink, preview_url:dPr.secure_url, font_url: fontDirectLink, status:'pending', order: 999, downloads: 0
@@ -623,7 +623,7 @@
       if(el) el.innerHTML=`<div style="display:flex;flex-direction:column;gap:15px;margin-top:15px;"><div style="background:rgba(139,92,246,.1);padding:15px;border-radius:10px;display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Total Designs</span><h2 style="margin:0;color:var(--text-main);">${allDesigns.length}</h2></div><div style="background:rgba(59,130,246,.1);padding:15px;border-radius:10px;display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Total Categories</span><h2 style="margin:0;color:var(--text-main);">${allCategories.length}</h2></div><div style="background:rgba(34,197,94,.1);padding:15px;border-radius:10px;display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Total Generates</span><h2 style="margin:0;color:var(--text-main);">${totalGenerates}</h2></div></div>`;
   }
 
-  // --- GENERATION LOGIC ---
+  // --- GENERATION LOGIC (CLOUDFLARE PROXY FIXED) ---
   async function preloadPSD(designId) {
       if (loadedDocumentId === designId) return;
       while(isPreloading) { await new Promise(r => setTimeout(r, 100)); }
@@ -640,9 +640,9 @@
           if (cachedDesignId === design.id && cachedBuffer) {
               arrayBuffer = cachedBuffer;
           } else {
-              // ✅ SUPABASE PROXY LAGAYA GAYA HAI (CORS bypass ke liye)
-              const proxyUrl = `${SUPABASE_URL}/functions/v1/proxy-psd?url=${encodeURIComponent(design.psdUrl)}`;
-              console.log("▶ [preload] Fetching via Proxy...");
+              // ✅ CLOUDFLARE PROXY LAGAYA HAI
+              const proxyUrl = `${CLOUDFLARE_PROXY_URL}?url=${encodeURIComponent(design.psdUrl)}`;
+              console.log("▶ [preload] Fetching via Cloudflare...");
               
               const response = await fetch(proxyUrl);
               if (!response.ok) throw new Error(`Proxy download failed (HTTP ${response.status}).`);
@@ -669,8 +669,8 @@
           
           if (design.fontUrl && !loadedFonts.has(design.fontUrl)) {
               console.log("▶ [preload] Loading font:", design.fontUrl);
-              // ✅ Font bhi proxy se load hoga taake CORS ka masla na aaye
-              const proxiedFontUrl = `${SUPABASE_URL}/functions/v1/proxy-psd?url=${encodeURIComponent(design.fontUrl)}`;
+              // ✅ FONT BHI CLOUDFLARE SE LOAD HOGA
+              const proxiedFontUrl = `${CLOUDFLARE_PROXY_URL}?url=${encodeURIComponent(design.fontUrl)}`;
               frame.contentWindow.postMessage(`try{ app.open("${proxiedFontUrl}"); }catch(e){}`, "*");
               await new Promise(r => setTimeout(r, 2500));
               loadedFonts.add(design.fontUrl);
@@ -813,15 +813,19 @@
       btn.disabled=true;
       
       const fdPr = new FormData(); fdPr.append('file', pr); fdPr.append('upload_preset', "test_preset");
-      const fdP = new FormData(); fdP.append('file', p); 
-      const fdF = new FormData(); fdF.append('file', f);
-      fdF.append('upload_preset', "test_preset"); // FONT UPLOAD PRESET ADDED
+      const fdF = new FormData(); fdF.append('file', f); fdF.append('upload_preset', "test_preset");
+      const fdP = new FormData(); fdP.append('file', p); fdP.append('upload_preset', "test_preset");
       
       try{
           const resPr = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`,{method:'POST',body:fdPr});
           const dPr = await resPr.json();
           if(!dPr.secure_url) throw new Error("Preview upload failed.");
           
+          const resF = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/raw/upload`,{method:'POST',body:fdF});
+          const dF = await resF.json();
+          if(!resF.ok || !dF.secure_url) throw new Error(dF.error?.message || "Font upload failed.");
+          const fontDirectLink = dF.secure_url;
+
           const resP = await fetch(`${SUPABASE_URL}/functions/v1/upload-to-dbimg`, {
               method: 'POST', headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` }, body: fdP 
           });
@@ -829,14 +833,6 @@
           if(!resP.ok) throw new Error(dP.error || "PSD upload failed on server.");
           if(!dP.directUrl) throw new Error("PSD upload returned invalid URL.");
           const psdDirectLink = "https://dbimg.app" + dP.directUrl;
-
-          // FONT UPLOAD TO CLOUDINARY RAW ENDPOINT
-          const resF = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/raw/upload`, {
-              method: 'POST', body: fdF 
-          });
-          const dF = await resF.json();
-          if(!resF.ok || !dF.secure_url) throw new Error(dF.error?.message || "Font upload failed. Please check file type.");
-          const fontDirectLink = dF.secure_url;
           
           const minO = allDesigns.length > 0 ? Math.min(...allDesigns.map(d => d.order || 0)) - 1 : 1;
           
