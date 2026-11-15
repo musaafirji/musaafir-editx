@@ -635,20 +635,21 @@
           
           console.log("▶ [preload] Design:", design.name);
           console.log("▶ [preload] PSD URL:", design.psdUrl);
-          console.log("▶ [preload] Font URL:", design.fontUrl);
 
           let arrayBuffer;
           if (cachedDesignId === design.id && cachedBuffer) {
               arrayBuffer = cachedBuffer;
           } else {
-              const response = await fetch(design.psdUrl);
-              console.log("▶ [preload] HTTP:", response.status, "| Type:", response.headers.get('content-type'));
-              if (!response.ok) throw new Error(`PSD download failed (HTTP ${response.status}).`);
-              const ct = response.headers.get('content-type') || '';
-              if (ct.includes('text/html')) throw new Error(`PSD URL returns HTML, not PSD.`);
+              // ✅ SUPABASE PROXY LAGAYA GAYA HAI (CORS bypass ke liye)
+              const proxyUrl = `${SUPABASE_URL}/functions/v1/proxy-psd?url=${encodeURIComponent(design.psdUrl)}`;
+              console.log("▶ [preload] Fetching via Proxy...");
+              
+              const response = await fetch(proxyUrl);
+              if (!response.ok) throw new Error(`Proxy download failed (HTTP ${response.status}).`);
               
               arrayBuffer = await response.arrayBuffer();
-              console.log("▶ [preload] Bytes:", arrayBuffer.byteLength);
+              console.log("▶ [preload] Bytes received:", arrayBuffer.byteLength);
+              
               if (arrayBuffer.byteLength < 100) throw new Error(`File too small. Not a valid PSD.`);
               
               const sig = new Uint8Array(arrayBuffer, 0, 4);
@@ -668,7 +669,9 @@
           
           if (design.fontUrl && !loadedFonts.has(design.fontUrl)) {
               console.log("▶ [preload] Loading font:", design.fontUrl);
-              frame.contentWindow.postMessage(`try{ app.open("${design.fontUrl}"); }catch(e){}`, "*");
+              // ✅ Font bhi proxy se load hoga taake CORS ka masla na aaye
+              const proxiedFontUrl = `${SUPABASE_URL}/functions/v1/proxy-psd?url=${encodeURIComponent(design.fontUrl)}`;
+              frame.contentWindow.postMessage(`try{ app.open("${proxiedFontUrl}"); }catch(e){}`, "*");
               await new Promise(r => setTimeout(r, 2500));
               loadedFonts.add(design.fontUrl);
           }
