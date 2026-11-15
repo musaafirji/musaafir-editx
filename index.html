@@ -176,12 +176,13 @@
     <div id="panel-designs" class="panel active">
       <div class="card">
         <h3 style="margin-top:0;font-weight:600;">Add New Design</h3>
-        <div class="form-row"><label>Design Name</label><input type="text" id="admin-name" placeholder="e.g., Malik Glass Effect"></div>
-        <div class="form-row"><label>Category</label><select id="admin-category"></select></div>
-        <div class="form-row"><label>Preview Image (JPG/PNG)</label><input type="file" id="admin-preview" accept="image/*"></div>
+        <div class="form-row"><label>Design Name</label><input type="text" id="admin-name" placeholder="e.g., Malik Glass Effect" required></div>
+        <div class="form-row"><label>Category</label><select id="admin-category" required></select></div>
+        <div class="form-row"><label>Preview Image (JPG/PNG)</label><input type="file" id="admin-preview" accept="image/*" required></div>
         
-        <!-- Wapis File Input -->
-        <div class="form-row"><label>PSD File (With Effects)</label><input type="file" id="admin-file" accept=".psd"></div>
+        <div class="form-row"><label>Custom Font (.TTF / .OTF)</label><input type="file" id="admin-font" accept=".ttf,.otf" required></div>
+        
+        <div class="form-row"><label>PSD File (With Effects)</label><input type="file" id="admin-file" accept=".psd" required></div>
         
         <button class="btn primary" onclick="saveDesignAdmin()" style="padding:14px 25px;font-size:16px;width:100%;">⬆ Save Design</button>
       </div>
@@ -198,7 +199,6 @@
     
     <div id="panel-stats" class="panel"><div class="card"><h3 style="margin-top:0;font-weight:600;">Dashboard Stats</h3><div id="admin-stats-content"></div></div></div>
 
-    <!-- NEW PANEL FOR EDITORS -->
     <div id="panel-editors" class="panel">
       <div class="card">
         <h3 style="margin-top:0;font-weight:600;">Add New Editor</h3>
@@ -237,10 +237,13 @@
     <div class="modal-box" style="text-align:left;">
       <h3 style="color:#8b5cf6;margin-top:0;">Submit Your Design</h3>
       <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">Your design will be reviewed by admin before going live.</p>
-      <div class="form-row"><label>Design Name</label><input type="text" id="pub-name" placeholder="e.g., King Art"></div>
-      <div class="form-row"><label>Category</label><select id="pub-category"></select></div>
-      <div class="form-row"><label>Preview Image (JPG/PNG)</label><input type="file" id="pub-preview" accept="image/*"></div>
-      <div class="form-row"><label>PSD File</label><input type="file" id="pub-file" accept=".psd"></div>
+      <div class="form-row"><label>Design Name</label><input type="text" id="pub-name" placeholder="e.g., King Art" required></div>
+      <div class="form-row"><label>Category</label><select id="pub-category" required></select></div>
+      <div class="form-row"><label>Preview Image (JPG/PNG)</label><input type="file" id="pub-preview" accept="image/*" required></div>
+      
+      <div class="form-row"><label>Custom Font (.TTF / .OTF)</label><input type="file" id="pub-font" accept=".ttf,.otf" required></div>
+      
+      <div class="form-row"><label>PSD File</label><input type="file" id="pub-file" accept=".psd" required></div>
       <div class="modal-actions" style="margin-top:25px;"><button class="btn" onclick="closePublicSubmitModal()">Cancel</button><button class="btn primary" onclick="submitPublicDesign()">Submit</button></div>
     </div>
   </div>
@@ -275,6 +278,7 @@
   let cachedDesignId = null;
   let loadedDocumentId = null;
   let isPreloading = false;
+  let loadedFonts = new Set();   // Track fonts already loaded in Photopea session
 
   // --- AUTHENTICATION SYSTEM ---
   async function checkAuth() {
@@ -332,14 +336,8 @@
       } else { 
           closeLoginModal(); 
           showToastMessage("Logged in successfully!");
-          
           await checkAuth(); 
-          
-          if (!isAdminView) {
-              toggleView(); 
-          } else {
-              loadAllData();
-          }
+          if (!isAdminView) { toggleView(); } else { loadAllData(); }
       }
   }
 
@@ -357,7 +355,10 @@
           
           const{data:desData,error:desErr}=await supabaseClient.from('designs').select('*').eq('status', 'published').order('order');
           if(desErr)throw desErr;
-          allDesigns=(desData||[]).map(d=>({id:d.id,name:d.name,categoryId:d.category_id,psdUrl:d.psd_url,previewUrl:d.preview_url,status:d.status,order:d.order,downloads:d.downloads}));
+          allDesigns=(desData||[]).map(d=>({
+              id:d.id, name:d.name, categoryId:d.category_id, psdUrl:d.psd_url, 
+              previewUrl:d.preview_url, fontUrl:d.font_url, status:d.status, order:d.order, downloads:d.downloads
+          }));
           
           if (currentUser) {
               const { data: pendData } = await supabaseClient.from('designs').select('*').eq('status', 'pending').order('created_at', { ascending: false });
@@ -377,96 +378,57 @@
               }, 500);
           }
           
-          renderAdmin();
-          renderPending();
-          renderUser();
-          renderStats();
+          renderAdmin(); renderPending(); renderUser(); renderStats();
       } catch(err){
           showAlert("Data Load Error","Could not fetch data.","❌");
       }
   }
 
-  // --- EDITOR MANAGEMENT (Via Edge Function) ---
+  // --- EDITOR MANAGEMENT ---
   async function renderEditorsList() {
       const list = document.getElementById('editors-list');
       if(!list) return;
       list.innerHTML = '<p>Loading...</p>';
-      
       try {
           const { data, error } = await supabaseClient.from('user_roles').select('*').eq('role', 'editor');
           if (error) throw error;
-          
-          if (!data || data.length === 0) {
-              list.innerHTML = '<p>No editors found.</p>';
-              return;
-          }
-          
+          if (!data || data.length === 0) { list.innerHTML = '<p>No editors found.</p>'; return; }
           list.innerHTML = data.map(e => `
               <div class="admin-item">
-                  <div class="admin-item-info">
-                      <h4>${e.email || 'Unknown Email'}</h4>
-                      <span>Role: Editor</span>
-                  </div>
-                  <div class="admin-actions">
-                      <button class="btn danger action-btn" onclick="deleteEditor('${e.id}')">Remove</button>
-                  </div>
+                  <div class="admin-item-info"><h4>${e.email || 'Unknown Email'}</h4><span>Role: Editor</span></div>
+                  <div class="admin-actions"><button class="btn danger action-btn" onclick="deleteEditor('${e.id}')">Remove</button></div>
               </div>
           `).join('');
-      } catch (err) {
-          list.innerHTML = '<p>Error loading editors.</p>';
-      }
+      } catch (err) { list.innerHTML = '<p>Error loading editors.</p>'; }
   }
 
   async function addNewEditor() {
       const email = document.getElementById('new-editor-email').value.trim();
       const password = document.getElementById('new-editor-password').value.trim();
       if(!email || !password) return showAlert("Error", "Email and password required", "⚠️");
-
       const btn = document.getElementById('add-editor-btn');
       btn.innerText = "Adding..."; btn.disabled = true;
-
       try {
           const { data: { session } } = await supabaseClient.auth.getSession();
           if (!session) throw new Error("Session expired. Please login again.");
-
           const response = await fetch(`${SUPABASE_URL}/functions/v1/create-editor`, {
-              method: 'POST',
-              headers: {
-                  'Authorization': `Bearer ${session.access_token}`,
-                  'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ email: email, password: password })
+              method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: password })
           });
-
           const result = await response.json();
-
-          if (!response.ok) {
-              throw new Error(result.error || "Failed to create editor");
-          }
-
+          if (!response.ok) throw new Error(result.error || "Failed to create editor");
           showAlert("Success", "Editor added successfully!", "✅");
-          document.getElementById('new-editor-email').value = '';
-          document.getElementById('new-editor-password').value = '';
+          document.getElementById('new-editor-email').value = ''; document.getElementById('new-editor-password').value = '';
           renderEditorsList();
-
-      } catch (err) {
-          showAlert("Failed", err.message, "❌");
-      } finally {
-          btn.innerText = "➕ Create Editor Account"; btn.disabled = false;
-      }
+      } catch (err) { showAlert("Failed", err.message, "❌"); } finally { btn.innerText = "➕ Create Editor Account"; btn.disabled = false; }
   }
 
   async function deleteEditor(id) {
       if(!await showConfirm("Remove Editor", "Are you sure you want to remove this editor?")) return;
-      
       try {
           const { error } = await supabaseClient.rpc('admin_delete_user', { target_user_id: id });
           if (error) throw error;
-          showToastMessage("Editor removed!");
-          renderEditorsList();
-      } catch (err) {
-          showAlert("Error", err.message, "❌");
-      }
+          showToastMessage("Editor removed!"); renderEditorsList();
+      } catch (err) { showAlert("Error", err.message, "❌"); }
   }
 
   // --- RPC DOWNLOAD COUNTER ---
@@ -489,31 +451,47 @@
       const c = document.getElementById('pub-category').value;
       const p = document.getElementById('pub-file').files[0];
       const pr = document.getElementById('pub-preview').files[0];
+      const f = document.getElementById('pub-font').files[0];
       
-      if(!n || !p || !pr) return showAlert("Missing", "Please fill all fields.", "⚠️");
+      if(!n || !p || !pr || !f) return showAlert("Missing", "Please fill all fields including Custom Font.", "⚠️");
       
       const btn = document.querySelector('button[onclick="submitPublicDesign()"]');
       const txt = btn.innerHTML; btn.innerHTML = 'Uploading...'; btn.disabled = true;
       
-      const fdP = new FormData(); fdP.append('file', p); fdP.append('upload_preset', "test_preset");
       const fdPr = new FormData(); fdPr.append('file', pr); fdPr.append('upload_preset', "test_preset");
+      const fdP = new FormData(); fdP.append('file', p); 
+      const fdF = new FormData(); fdF.append('file', f); 
+      fdF.append('upload_preset', "test_preset"); // FONT UPLOAD PRESET ADDED
       
       try {
-          const [resP, resPr] = await Promise.all([
-              fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`, {method:'POST',body:fdP}),
-              fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`, {method:'POST',body:fdPr})
-          ]);
-          const dP=await resP.json(), dPr=await resPr.json();
-          if(!dP.secure_url||!dPr.secure_url) throw new Error("Upload failed");
+          const resPr = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`, {method:'POST',body:fdPr});
+          const dPr = await resPr.json();
+          if(!dPr.secure_url) throw new Error("Preview upload failed.");
+          
+          const resP = await fetch(`${SUPABASE_URL}/functions/v1/upload-to-dbimg`, {
+              method: 'POST', headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` }, body: fdP 
+          });
+          const dP = await resP.json();
+          if(!resP.ok) throw new Error(dP.error || "PSD upload failed on server.");
+          if(!dP.directUrl) throw new Error("PSD upload returned invalid URL.");
+          const psdDirectLink = "https://dbimg.app" + dP.directUrl;
+
+          // FONT UPLOAD TO CLOUDINARY RAW ENDPOINT
+          const resF = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/raw/upload`, {
+              method: 'POST', body: fdF 
+          });
+          const dF = await resF.json();
+          if(!resF.ok || !dF.secure_url) throw new Error(dF.error?.message || "Font upload failed. Please check file type.");
+          const fontDirectLink = dF.secure_url;
           
           await supabaseClient.from('designs').insert([{
-              id:'d_'+Date.now(), name:n, category_id:c, psd_url:dP.secure_url, preview_url:dPr.secure_url, status:'pending', order: 999, downloads: 0
+              id:'d_'+Date.now(), name:n, category_id:c, psd_url:psdDirectLink, preview_url:dPr.secure_url, font_url: fontDirectLink, status:'pending', order: 999, downloads: 0
           }]);
           
           btn.innerHTML = txt; btn.disabled = false;
           closePublicSubmitModal();
           showAlert("Submitted!", "Your design is pending approval.", "✅");
-          document.getElementById('pub-name').value = '';
+          document.getElementById('pub-name').value = ''; document.getElementById('pub-file').value = ''; document.getElementById('pub-preview').value = ''; document.getElementById('pub-font').value = '';
       } catch(err) {
           showAlert("Failed", err.message, "❌");
           btn.innerHTML = txt; btn.disabled = false;
@@ -543,9 +521,7 @@
           }
           loadAllData();
           if (currentUserRole === 'super_admin') renderEditorsList();
-      } else {
-          document.getElementById('user-view').style.display='block';
-      }
+      } else { document.getElementById('user-view').style.display='block'; }
   }
 
   function switchTab(tabName,el){
@@ -560,13 +536,10 @@
       const list = document.getElementById('pending-list');
       if(!list) return;
       if(pendingDesigns.length === 0) { list.innerHTML = '<p>No pending designs.</p>'; return; }
-      
       list.innerHTML = pendingDesigns.map(d => `
           <div class="admin-item">
               <img src="${d.preview_url}">
-              <div class="admin-item-info">
-                  <h4>${d.name} <span class="status-badge status-pending">PENDING</span></h4>
-              </div>
+              <div class="admin-item-info"><h4>${d.name} <span class="status-badge status-pending">PENDING</span></h4></div>
               <div class="admin-actions">
                   <button class="btn primary action-btn" onclick="approveDesign('${d.id}')">✅ Approve</button>
                   <button class="btn danger action-btn" onclick="deleteDesign('${d.id}')">Reject</button>
@@ -578,8 +551,7 @@
   async function approveDesign(id) {
       const minO = allDesigns.length > 0 ? Math.min(...allDesigns.map(d => d.order || 0)) - 1 : 1;
       await supabaseClient.from('designs').update({status:'published', order:minO}).eq('id',id);
-      showToastMessage("Design Approved!");
-      loadAllData();
+      showToastMessage("Design Approved!"); loadAllData();
   }
 
   function renderAdmin(){
@@ -587,17 +559,14 @@
       if(catList && currentUserRole === 'super_admin') {
           catList.innerHTML=allCategories.map(c=>`<div class="admin-item"><div class="admin-item-info"><h4>${c.name}</h4></div><div class="admin-actions"><button class="btn action-btn" onclick="moveItem('categories','${c.id}','up')">⬅️</button><button class="btn action-btn" onclick="moveItem('categories','${c.id}','down')">➡️</button><button class="btn action-btn" onclick="openEditModal('category','${c.id}')">✏️</button><button class="btn danger action-btn" onclick="deleteCategory('${c.id}')">Delete</button></div></div>`).join('')||'<p>No categories.</p>';
       }
-      
       const catOptions=allCategories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
       if(document.getElementById('admin-category')) document.getElementById('admin-category').innerHTML=catOptions;
       if(document.getElementById('edit-category')) document.getElementById('edit-category').innerHTML=catOptions;
       
       const adminList = document.getElementById('admin-list');
       if(!adminList) return;
-      
       adminList.innerHTML=allDesigns.map(d=>{
           const cat=allCategories.find(c=>c.id===d.categoryId);
-          
           let actionButtons = '';
           if (currentUserRole === 'super_admin') {
               actionButtons = `
@@ -615,7 +584,6 @@
                   <button class="btn action-btn" onclick="copyDesignLink(event, '${d.id}')" title="Copy Share Link">🔗 Share Link</button>
               `;
           }
-
           return `<div class="admin-item">
               <img src="${d.previewUrl}">
               <div class="admin-item-info">
@@ -658,39 +626,69 @@
   // --- GENERATION LOGIC ---
   async function preloadPSD(designId) {
       if (loadedDocumentId === designId) return;
-      while(isPreloading) { await new Promise(r => setTimeout(r, 100)); } 
+      while(isPreloading) { await new Promise(r => setTimeout(r, 100)); }
       if (loadedDocumentId === designId) return;
-      
       isPreloading = true;
       try {
           const design = allDesigns.find(d => d.id === designId);
           if(!design) { isPreloading = false; return; }
           
+          console.log("▶ [preload] Design:", design.name);
+          console.log("▶ [preload] PSD URL:", design.psdUrl);
+          console.log("▶ [preload] Font URL:", design.fontUrl);
+
           let arrayBuffer;
           if (cachedDesignId === design.id && cachedBuffer) {
               arrayBuffer = cachedBuffer;
           } else {
               const response = await fetch(design.psdUrl);
+              console.log("▶ [preload] HTTP:", response.status, "| Type:", response.headers.get('content-type'));
+              if (!response.ok) throw new Error(`PSD download failed (HTTP ${response.status}).`);
+              const ct = response.headers.get('content-type') || '';
+              if (ct.includes('text/html')) throw new Error(`PSD URL returns HTML, not PSD.`);
+              
               arrayBuffer = await response.arrayBuffer();
+              console.log("▶ [preload] Bytes:", arrayBuffer.byteLength);
+              if (arrayBuffer.byteLength < 100) throw new Error(`File too small. Not a valid PSD.`);
+              
+              const sig = new Uint8Array(arrayBuffer, 0, 4);
+              const sigStr = String.fromCharCode(sig[0], sig[1], sig[2], sig[3]);
+              console.log("▶ [preload] Signature:", sigStr);
+              if (sigStr !== '8BPS') throw new Error(`File is not a PSD (signature "${sigStr}").`);
+              
               cachedBuffer = arrayBuffer;
               cachedDesignId = design.id;
           }
           
-          while(!isPhotopeaReady) { await new Promise(r => setTimeout(r, 500)); } 
+          while(!isPhotopeaReady) { await new Promise(r => setTimeout(r, 500)); }
           
           if (currentDesignId !== designId && bulkDesignId !== designId) {
-              isPreloading = false; return; 
+              isPreloading = false; return;
           }
           
-          closePhotopeaDocument(); 
+          if (design.fontUrl && !loadedFonts.has(design.fontUrl)) {
+              console.log("▶ [preload] Loading font:", design.fontUrl);
+              frame.contentWindow.postMessage(`try{ app.open("${design.fontUrl}"); }catch(e){}`, "*");
+              await new Promise(r => setTimeout(r, 2500));
+              loadedFonts.add(design.fontUrl);
+          }
+          
+          console.log("▶ [preload] Posting PSD to Photopea...");
+          closePhotopeaDocument();
+          await new Promise(r => setTimeout(r, 300));
           frame.contentWindow.postMessage(arrayBuffer, "*");
           loadedDocumentId = design.id;
-      } catch(e) { console.error("Preload error", e); }
+          console.log("✅ [preload] PSD posted");
+      } catch(e) {
+          console.error("❌ [preload] FAILED:", e.message);
+          isPreloading = false;
+          throw e;
+      }
       isPreloading = false;
   }
 
   function closePhotopeaDocument() {
-      frame.contentWindow.postMessage('try{ while(app.documents.length>0){app.activeDocument.close()} }catch(e){}', '*');
+      frame.contentWindow.postMessage('try{ var n=0; while(app.documents.length>0 && n<10){app.activeDocument.close(); n++;} }catch(e){}', '*');
       loadedDocumentId = null;
   }
 
@@ -715,7 +713,6 @@
   window.addEventListener('DOMContentLoaded',()=>{
       frame.src="https://www.photopea.com#%7B%7D";
       try{const savedTheme=localStorage.getItem('theme'),menuItem=document.getElementById('theme-menu-item');if(savedTheme==='light'){document.getElementById('app-wrapper').classList.add('light-theme');document.body.classList.add('light-theme');menuItem.innerHTML='🌙 Switch to Dark Theme'}else{document.getElementById('app-wrapper').classList.remove('light-theme');document.body.classList.remove('light-theme');menuItem.innerHTML='☀️ Switch to Light Theme'}}catch(e){}
-      
       checkAuth().then(() => { loadAllData(); });
   });
   
@@ -724,8 +721,7 @@
       if(typeof e.data==='string' && e.data.startsWith("STATUS:")) return;
       
       if(typeof e.data==='string' && e.data.startsWith("ERROR:")){
-          clearTimeout(generationTimeout);
-          hidePhotopea();
+          clearTimeout(generationTimeout); hidePhotopea();
           if(isBulkGenerating){showAlert("Bulk Error",e.data.replace("ERROR: ",""),"❌");isBulkGenerating=false}
           else{showAlert("Error",e.data.replace("ERROR: ",""),"❌");if(currentDesignId)resetUI(currentDesignId)}
           return
@@ -736,29 +732,20 @@
       
       if(e.data instanceof ArrayBuffer || e.data instanceof Blob){
           clearTimeout(generationTimeout);
-          
           if(isBulkGenerating){
               const blob=e.data instanceof Blob?e.data:new Blob([e.data],{type:"image/jpeg"});
               bulkZip.file(`${bulkQueue[bulkCurrentIndex]}_${bulkZipFolderName}.jpg`,blob);
-              await incrementDownload(bulkDesignId);
-              bulkCurrentIndex++;
+              await incrementDownload(bulkDesignId); bulkCurrentIndex++;
               processNextBulkName(allDesigns.find(d=>d.id===bulkDesignId));
           } else {
-              if(currentDesignId){
-                  await incrementDownload(currentDesignId);
-              }
+              if(currentDesignId){ await incrementDownload(currentDesignId); }
               const blob=e.data instanceof Blob?e.data:new Blob([e.data],{type:"image/jpeg"});
               const url=URL.createObjectURL(blob);
-              const a=document.createElement("a");
-              a.href=url;
+              const a=document.createElement("a"); a.href=url;
               const inputEl = document.getElementById(`input-${currentDesignId}`);
               const nameForFile = inputEl ? inputEl.value.trim() : 'art';
-              a.download = (nameForFile || 'art') + "_Musaafir.jpg";
-              a.click();
-              
-              if(inputEl) inputEl.value = ""; 
-              hidePhotopea();
-              
+              a.download = (nameForFile || 'art') + "_Musaafir.jpg"; a.click();
+              if(inputEl) inputEl.value = ""; hidePhotopea();
               if(currentDesignId){
                   const imgEl = document.querySelector(`#card-${currentDesignId} .img-container img`);
                   if(imgEl) imgEl.src = url;
@@ -773,11 +760,14 @@
   
   async function loadSettings(){try{const{data,error}=await supabaseClient.from('settings').select('*');if(error)throw error;document.getElementById('contact-fb').href=data.find(s=>s.key==='fb')?.value||"#";document.getElementById('contact-wa').href=`https://wa.me/${data.find(s=>s.key==='wa')?.value||""}`;document.getElementById('contact-email').href=`mailto:${data.find(s=>s.key==='email')?.value||""}`;document.getElementById('setting-fb').value=data.find(s=>s.key==='fb')?.value||"";document.getElementById('setting-wa').value=data.find(s=>s.key==='wa')?.value||"";document.getElementById('setting-email').value=data.find(s=>s.key==='email')?.value||""}catch(e){}}
   
-  // Admin Actions
   function filterCategory(catId){ currentCategoryFilter=catId; currentDesignId=null; closePhotopeaDocument(); renderUser(); }
   function toggleCard(id){
       if(currentDesignId === id) { currentDesignId = null; closePhotopeaDocument(); } 
-      else { if(currentDesignId !== null) closePhotopeaDocument(); currentDesignId = id; preloadPSD(id); }
+      else { 
+          if(currentDesignId !== null) closePhotopeaDocument(); 
+          currentDesignId = id; 
+          preloadPSD(id).catch(err => console.error("Card preload error:", err.message)); 
+      }
       renderUser();
   }
   
@@ -804,61 +794,54 @@
   function closeEditModal(){document.getElementById('editModal').classList.remove('active')}
   async function saveEdit(){const n=document.getElementById('edit-name').value.trim();if(!n)return;if(editingType==='design'){await supabaseClient.from('designs').update({name:n,category_id:document.getElementById('edit-category').value}).eq('id',editingId)}else{await supabaseClient.from('categories').update({name:n}).eq('id',editingId)}closeEditModal();loadAllData()}
   
-  // --- UPDATED SAVE FUNCTION (Via Supabase Proxy) ---
+  // --- ADMIN SAVE FUNCTION ---
   async function saveDesignAdmin(){
       const n = document.getElementById('admin-name').value.trim();
       const c = document.getElementById('admin-category').value;
       const p = document.getElementById('admin-file').files[0];
       const pr = document.getElementById('admin-preview').files[0];
+      const f = document.getElementById('admin-font').files[0];
       
-      if(!n || !p || !pr) return showAlert("Missing", "Please fill all fields and select both files.", "⚠️");
+      if(!n || !p || !pr || !f) return showAlert("Missing", "Please fill all fields including Custom Font.", "⚠️");
       
       const btn = document.querySelector('button[onclick="saveDesignAdmin()"]');
       const txt = btn.innerHTML; 
-      btn.innerHTML='<span class="btn-spinner"></span> Uploading PSD & Preview...'; 
+      btn.innerHTML='<span class="btn-spinner"></span> Uploading files...'; 
       btn.disabled=true;
       
       const fdPr = new FormData(); fdPr.append('file', pr); fdPr.append('upload_preset', "test_preset");
       const fdP = new FormData(); fdP.append('file', p); 
+      const fdF = new FormData(); fdF.append('file', f);
+      fdF.append('upload_preset', "test_preset"); // FONT UPLOAD PRESET ADDED
       
       try{
-          // 1. Upload Preview to Cloudinary (Yeh waisa hi rahega)
           const resPr = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/auto/upload`,{method:'POST',body:fdPr});
           const dPr = await resPr.json();
           if(!dPr.secure_url) throw new Error("Preview upload failed.");
           
-          // 2. Upload PSD to Supabase Edge Function (Proxy) - CORS Fixed
           const resP = await fetch(`${SUPABASE_URL}/functions/v1/upload-to-dbimg`, {
-              method: 'POST',
-              headers: {
-                  'Authorization': `Bearer ${SUPABASE_KEY}` // Edge function call ke liye key zaroori hai
-              },
-              body: fdP 
+              method: 'POST', headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` }, body: fdP 
           });
-          
           const dP = await resP.json();
-          
           if(!resP.ok) throw new Error(dP.error || "PSD upload failed on server.");
-          if(!dP.directUrl) throw new Error("PSD upload failed. Invalid response.");
-          
+          if(!dP.directUrl) throw new Error("PSD upload returned invalid URL.");
           const psdDirectLink = "https://dbimg.app" + dP.directUrl;
+
+          // FONT UPLOAD TO CLOUDINARY RAW ENDPOINT
+          const resF = await fetch(`https://api.cloudinary.com/v1_1/fujerk60/raw/upload`, {
+              method: 'POST', body: fdF 
+          });
+          const dF = await resF.json();
+          if(!resF.ok || !dF.secure_url) throw new Error(dF.error?.message || "Font upload failed. Please check file type.");
+          const fontDirectLink = dF.secure_url;
           
           const minO = allDesigns.length > 0 ? Math.min(...allDesigns.map(d => d.order || 0)) - 1 : 1;
           
           await supabaseClient.from('designs').insert([{
-              id:'d_'+Date.now(),
-              name:n,
-              category_id:c,
-              psd_url: psdDirectLink, 
-              preview_url:dPr.secure_url,
-              status:'published',
-              order:minO,
-              downloads:0
+              id:'d_'+Date.now(), name:n, category_id:c, psd_url: psdDirectLink, preview_url:dPr.secure_url, font_url: fontDirectLink, status:'published', order:minO, downloads:0
           }]);
           
-          document.getElementById('admin-name').value='';
-          document.getElementById('admin-file').value='';
-          document.getElementById('admin-preview').value='';
+          document.getElementById('admin-name').value=''; document.getElementById('admin-file').value=''; document.getElementById('admin-preview').value=''; document.getElementById('admin-font').value='';
           
           btn.innerHTML=txt; btn.disabled=false;
           showAlert("Success!","Design Published!","🎉"); 
@@ -887,7 +870,7 @@
       globalLoaderText.innerText="Processing...";showPhotopea();
       
       clearTimeout(generationTimeout);
-      generationTimeout=setTimeout(()=>{ hidePhotopea(); showAlert("Timeout","Took too long.","⏳"); resetUI(cardId) },150000);
+      generationTimeout=setTimeout(()=>{ hidePhotopea(); showAlert("Timeout","Generation took too long. Please try again.","⏳"); resetUI(cardId) },180000);
       
       const processPSD=async()=>{
           try{
@@ -897,21 +880,36 @@
               const saveImageScript = `try { app.activeDocument.saveToOE("jpg"); } catch(e) { app.echoToOE("ERROR: " + e.message); }`;
 
               let retryCount = 0;
-              window.handleNotLoaded = () => { retryCount++; if (retryCount > 40) { hidePhotopea(); showAlert("Error", "Timeout loading PSD.", "❌"); resetUI(cardId); window.handleNotLoaded=null; window.handleTextApplied=null; return; } setTimeout(() => frame.contentWindow.postMessage(changeTextScript, "*"), 500); };
+              window.handleNotLoaded = () => { retryCount++; if (retryCount > 240) { hidePhotopea(); clearTimeout(generationTimeout); showAlert("PSD Load Timeout", "PSD could not load in time. Try refreshing the page.", "❌"); resetUI(cardId); window.handleNotLoaded=null; window.handleTextApplied=null; return; } setTimeout(() => frame.contentWindow.postMessage(changeTextScript, "*"), 500); };
               window.handleTextApplied = () => { window.handleNotLoaded=null; window.handleTextApplied=null; if (currentDesignId !== cardId) return; setTimeout(() => { if (currentDesignId === cardId) frame.contentWindow.postMessage(saveImageScript, "*"); }, 300); };
 
               frame.contentWindow.postMessage(changeTextScript, "*"); 
-          }catch(err){ hidePhotopea(); showAlert("Error","Could not process file.","❌"); resetUI(cardId) }
+          }catch(err){ 
+              hidePhotopea(); clearTimeout(generationTimeout);
+              showAlert("PSD Load Failed", err.message, "❌");
+              resetUI(cardId); 
+          }
       };
       
-      if(isPhotopeaReady)processPSD();
-      else { pendingGeneration=processPSD; setTimeout(()=>{ if(!isPhotopeaReady){ isPhotopeaReady=true; if(pendingGeneration) { pendingGeneration(); pendingGeneration=null; } } },8000) }
+      if(isPhotopeaReady) {
+          processPSD();
+      } else {
+          pendingGeneration = processPSD;
+          setTimeout(() => {
+              if(pendingGeneration) {
+                  hidePhotopea();
+                  showAlert("Photopea Not Ready", "Editor failed to load in 30 seconds. Please refresh the page (F5) and try again.", "⏳");
+                  pendingGeneration = null;
+                  resetUI(cardId);
+              }
+          }, 30000);
+      }
   }
   
   function resetUI(cardId){ const b=document.getElementById(`btn-${cardId}`); if(b){ b.disabled=false; b.innerHTML='✨ Generate & Download' } }
   
   // Bulk Generation
-  function openBulkModal(id){ bulkDesignId=id; document.getElementById('bulkNamesInput').value=''; document.getElementById('bulkNamesInput').disabled=false; document.getElementById('bulkStartBtn').style.display='block'; document.getElementById('bulkCancelBtn').innerText='Cancel'; document.getElementById('bulkProgressContainer').style.display='none'; document.getElementById('bulkGenerateModal').classList.add('active'); preloadPSD(id); }
+  function openBulkModal(id){ bulkDesignId=id; document.getElementById('bulkNamesInput').value=''; document.getElementById('bulkNamesInput').disabled=false; document.getElementById('bulkStartBtn').style.display='block'; document.getElementById('bulkCancelBtn').innerText='Cancel'; document.getElementById('bulkProgressContainer').style.display='none'; document.getElementById('bulkGenerateModal').classList.add('active'); preloadPSD(id).catch(err => console.error("Bulk preload error:", err.message)); }
   function closeBulkModal(){ if(isBulkGenerating){ showConfirm("Stop?","Stop?").then(res=>{ if(res){ isBulkGenerating=false; hidePhotopea(); closePhotopeaDocument(); document.getElementById('bulkGenerateModal').classList.remove('active') } }) } else { closePhotopeaDocument(); document.getElementById('bulkGenerateModal').classList.remove('active') } }
   
   async function startBulkGeneration(){
@@ -923,8 +921,24 @@
       document.getElementById('bulkNamesInput').disabled=true; document.getElementById('bulkStartBtn').style.display='none'; document.getElementById('bulkCancelBtn').innerText='Stop'; document.getElementById('bulkProgressContainer').style.display='block';
       updateBulkProgress(); showPhotopea();
       
-      const loadAndStart = async () => { try { await preloadPSD(design.id); setTimeout(() => { processNextBulkName(design); }, 500); } catch(err) { hidePhotopea(); showAlert("Error", "Could not load file.", "❌"); isBulkGenerating = false; } };
-      if (isPhotopeaReady) loadAndStart(); else { pendingGeneration = loadAndStart; setTimeout(() => { if (!isPhotopeaReady) { isPhotopeaReady = true; if(pendingGeneration) { pendingGeneration(); pendingGeneration = null; } } }, 8000); }
+      const loadAndStart = async () => { 
+          try { await preloadPSD(design.id); setTimeout(() => { processNextBulkName(design); }, 500); } 
+          catch(err) { hidePhotopea(); showAlert("PSD Load Failed", err.message, "❌"); isBulkGenerating = false; } 
+      };
+      
+      if (isPhotopeaReady) {
+          loadAndStart();
+      } else {
+          pendingGeneration = loadAndStart;
+          setTimeout(() => {
+              if (pendingGeneration) {
+                  hidePhotopea();
+                  showAlert("Photopea Not Ready", "Editor failed to load in 30 seconds. Please refresh and try again.", "⏳");
+                  pendingGeneration = null;
+                  isBulkGenerating = false;
+              }
+          }, 30000);
+      }
   }
   
   function updateBulkProgress(){document.getElementById('bulkProgressText').innerText=`Processing ${bulkCurrentIndex+1} of ${bulkQueue.length}...`;document.getElementById('bulkProgressBar').style.width=((bulkCurrentIndex/bulkQueue.length)*100)+'%'}
@@ -939,7 +953,7 @@
           const saveImageScript = `try { app.activeDocument.saveToOE("jpg"); } catch(e) { app.echoToOE("ERROR: " + e.message); }`;
           
           let retryCount = 0;
-          window.handleNotLoaded = () => { retryCount++; if (retryCount > 40) { hidePhotopea(); showAlert("Error", "Timeout loading PSD.", "❌"); isBulkGenerating = false; window.handleNotLoaded=null; window.handleTextApplied=null; return; } setTimeout(() => frame.contentWindow.postMessage(changeTextScript, "*"), 500); };
+          window.handleNotLoaded = () => { retryCount++; if (retryCount > 240) { hidePhotopea(); showAlert("PSD Load Timeout", "PSD could not load in time.", "❌"); isBulkGenerating = false; window.handleNotLoaded=null; window.handleTextApplied=null; return; } setTimeout(() => frame.contentWindow.postMessage(changeTextScript, "*"), 500); };
           window.handleTextApplied = () => { window.handleNotLoaded=null; window.handleTextApplied=null; if (!isBulkGenerating) return; setTimeout(() => { if (isBulkGenerating) frame.contentWindow.postMessage(saveImageScript, "*"); }, 300); };
 
           frame.contentWindow.postMessage(changeTextScript, "*");
