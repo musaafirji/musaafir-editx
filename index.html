@@ -47,8 +47,38 @@
   .btn.primary{background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;color:#fff;font-weight:600;box-shadow:0 4px 15px rgba(59,130,246,.3);display:flex;align-items:center;justify-content:center;gap:8px}.btn.primary:hover{background:linear-gradient(135deg,#2563eb,#7c3aed)}.btn.primary:disabled{opacity:.8;cursor:not-allowed;transform:none}.btn.danger{background:rgba(185,28,28,.8);border-color:#b91c1c;color:#fff}.btn.action-btn{padding:6px 10px;font-size:12px}
   #user-view{padding-bottom:50px}#category-bar{display:flex;overflow-x:auto;gap:12px;padding:25px 20px;max-width:1200px;margin:0 auto;-ms-overflow-style:none;scrollbar-width:none}#category-bar::-webkit-scrollbar{display:none}
   .cat-tab{padding:10px 22px;border:1px solid var(--btn-border);border-radius:30px;background:var(--cat-bg);backdrop-filter:blur(10px);color:var(--cat-color);white-space:nowrap;cursor:pointer;font-size:14px;font-weight:500}.cat-tab.active{background:linear-gradient(135deg,rgba(59,130,246,.9),rgba(139,92,246,.9));border-color:rgba(139,92,246,.6);color:#fff;font-weight:600}
-  #design-grid{display:grid;grid-template-columns:1fr;gap:25px;padding:20px;max-width:1200px;margin:0 auto}@media(min-width:768px){#design-grid{grid-template-columns:repeat(auto-fill,minmax(350px,1fr))}}
-  .design-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 5px 20px rgba(0,0,0,.1)}.design-card .img-container{position:relative;cursor:pointer;background:#000;overflow:hidden}.design-card img{width:100%;display:block;object-fit:contain;transition:opacity .3s,filter .3s}
+  
+  /* ✅ NAYA MASONRY LAYOUT (PINTEREST STYLE) */
+  #design-grid {
+      column-count: 1;
+      column-gap: 25px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+  }
+  @media(min-width: 768px) {
+      #design-grid { column-count: 2; }
+  }
+  @media(min-width: 1024px) {
+      #design-grid { column-count: 3; }
+  }
+
+  .design-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: inline-flex;
+      flex-direction: column;
+      box-shadow: 0 5px 20px rgba(0,0,0,.1);
+      margin-bottom: 25px; /* Column gap ki jagah margin use hoga */
+      width: 100%;
+      break-inside: avoid; /* Card ko beech se na tootne de */
+      -webkit-column-break-inside: avoid;
+  }
+  
+  .design-card .img-container{position:relative;cursor:pointer;background:#000;overflow:hidden; width:100%;}
+  .design-card img{width:100%;display:block;object-fit:cover;transition:opacity .3s,filter .3s; min-height: 150px;}
   
   .user-copy-btn {
       position: absolute;
@@ -370,7 +400,7 @@
           if(desErr)throw desErr;
           allDesigns=(desData||[]).map(d=>({
               id:d.id, name:d.name, categoryId:d.category_id, psdUrl:d.psd_url, 
-              previewUrl:getOptimizedCloudinaryUrl(d.preview_url), // ✅ Optimized URL
+              previewUrl:getOptimizedCloudinaryUrl(d.preview_url), 
               fontUrl:d.font_url, status:d.status, order:d.order, downloads:d.downloads
           }));
           
@@ -610,13 +640,12 @@
       let filtered=allDesigns.filter(d=>d.status!=='draft' && d.status!=='pending');
       if(currentCategoryFilter!=='all')filtered=filtered.filter(d=>d.categoryId===currentCategoryFilter);
       const grid=document.getElementById('design-grid');
-      if(filtered.length===0){grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:60px 20px;"><h3>No designs found</h3></div>`;return}
+      if(filtered.length===0){grid.innerHTML=`<div style="width:100%;text-align:center;padding:60px 20px;"><h3>No designs found</h3></div>`;return}
       
       grid.innerHTML=filtered.map(d=>`
           <div class="design-card ${d.id===currentDesignId?'active':''}" id="card-${d.id}">
               <div class="img-container" onclick="toggleCard('${d.id}')">
-                  <!-- ✅ Lazy Loading and optimized URL applied here -->
-                  <img src="${d.previewUrl}" loading="lazy" decoding="async" style="min-height: 200px; background: #111;">
+                  <img src="${d.previewUrl}" loading="lazy" decoding="async">
                   <button class="user-copy-btn" onclick="copyDesignLink(event, '${d.id}')">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy
                   </button>
@@ -651,7 +680,6 @@
           if (cachedDesignId === design.id && cachedBuffer) {
               arrayBuffer = cachedBuffer;
           } else {
-              // ✅ CLOUDFLARE PROXY FOR PSD
               const proxyUrl = `${CLOUDFLARE_PROXY_URL}?url=${encodeURIComponent(design.psdUrl)}`;
               console.log("▶ [preload] Fetching via Cloudflare...");
               
@@ -680,7 +708,6 @@
           
           if (design.fontUrl && !loadedFonts.has(design.fontUrl)) {
               console.log("▶ [preload] Loading font:", design.fontUrl);
-              // ✅ FONT DIRECT CLOUDINARY SE LOAD HOGA
               frame.contentWindow.postMessage(`try{ app.open("${design.fontUrl}"); }catch(e){}`, "*");
               await new Promise(r => setTimeout(r, 2500));
               loadedFonts.add(design.fontUrl);
