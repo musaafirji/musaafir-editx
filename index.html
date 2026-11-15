@@ -263,8 +263,8 @@
   const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg";
   
-  // ✅ YAHAN NAYA CLOUDFLARE PROXY URL DAAL DIYA GAYA HAI
-  const CLOUDFLARE_PROXY_URL = "https://psd-proxy-cache.musaafir-ji.workers.dev"; 
+  // ✅ WAPAS PURANA STABLE PROXY URL LAGA DIYA HAI
+  const CLOUDFLARE_PROXY_URL = "https://psd-proxy.musaafir-ji.workers.dev"; 
   
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -623,7 +623,7 @@
       if(el) el.innerHTML=`<div style="display:flex;flex-direction:column;gap:15px;margin-top:15px;"><div style="background:rgba(139,92,246,.1);padding:15px;border-radius:10px;display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Total Designs</span><h2 style="margin:0;color:var(--text-main);">${allDesigns.length}</h2></div><div style="background:rgba(59,130,246,.1);padding:15px;border-radius:10px;display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Total Categories</span><h2 style="margin:0;color:var(--text-main);">${allCategories.length}</h2></div><div style="background:rgba(34,197,94,.1);padding:15px;border-radius:10px;display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Total Generates</span><h2 style="margin:0;color:var(--text-main);">${totalGenerates}</h2></div></div>`;
   }
 
-  // --- GENERATION LOGIC (CLOUDFLARE PROXY) ---
+  // --- GENERATION LOGIC (STABLE PROXY) ---
   async function preloadPSD(designId) {
       if (loadedDocumentId === designId) return;
       while(isPreloading) { await new Promise(r => setTimeout(r, 100)); }
@@ -640,7 +640,7 @@
           if (cachedDesignId === design.id && cachedBuffer) {
               arrayBuffer = cachedBuffer;
           } else {
-              // ✅ CLOUDFLARE PROXY LAGAYA HAI
+              // ✅ STABLE CLOUDFLARE PROXY
               const proxyUrl = `${CLOUDFLARE_PROXY_URL}?url=${encodeURIComponent(design.psdUrl)}`;
               console.log("▶ [preload] Fetching via Cloudflare...");
               
@@ -669,7 +669,7 @@
           
           if (design.fontUrl && !loadedFonts.has(design.fontUrl)) {
               console.log("▶ [preload] Loading font:", design.fontUrl);
-              // ✅ FONT BHI CLOUDFLARE SE LOAD HOGA
+              // ✅ FONT BHI STABLE PROXY SE LOAD HOGA
               const proxiedFontUrl = `${CLOUDFLARE_PROXY_URL}?url=${encodeURIComponent(design.fontUrl)}`;
               frame.contentWindow.postMessage(`try{ app.open("${proxiedFontUrl}"); }catch(e){}`, "*");
               await new Promise(r => setTimeout(r, 2500));
