@@ -29,7 +29,6 @@
   *{box-sizing:border-box;font-family:'Poppins',sans-serif}
   html,body{margin:0;padding:0;background-color:var(--bg-color);min-height:100vh;overflow-x:hidden}
   
-  /* ✅ WAPAS PURANA IFRAME SETUP (Throttling se bachne ke liye) */
   #photopea-frame{position:fixed;bottom:0;left:0;width:10px;height:10px;z-index:99998;opacity:.01!important;border:none;pointer-events:none}
   
   #app-wrapper{position:relative;z-index:10;background-color:var(--bg-color);background-image:var(--bg-image);background-attachment:fixed;min-height:100vh;width:100%;color:var(--text-main);transition:background-color .4s,color .4s;overflow-x:hidden}
@@ -51,7 +50,6 @@
   #user-view{padding-bottom:50px}#category-bar{display:flex;overflow-x:auto;gap:12px;padding:25px 20px;max-width:1200px;margin:0 auto;-ms-overflow-style:none;scrollbar-width:none}#category-bar::-webkit-scrollbar{display:none}
   .cat-tab{padding:10px 22px;border:1px solid var(--btn-border);border-radius:30px;background:var(--cat-bg);backdrop-filter:blur(10px);color:var(--cat-color);white-space:nowrap;cursor:pointer;font-size:14px;font-weight:500}.cat-tab.active{background:linear-gradient(135deg,rgba(59,130,246,.9),rgba(139,92,246,.9));border-color:rgba(139,92,246,.6);color:#fff;font-weight:600}
   
-  /* ✅ PINTEREST MASONRY LAYOUT */
   #design-grid {
       column-width: 320px; 
       column-gap: 25px;
@@ -391,7 +389,8 @@
           if(catErr)throw catErr;
           allCategories=catData||[];
           
-          const{data:desData,error:desErr}=await supabaseClient.from('designs').select('*').eq('status', 'published').order('order');
+          // ✅ FIX: Admin ke liye saare designs fetch karein (Published + Draft)
+          const{data:desData,error:desErr}=await supabaseClient.from('designs').select('*').order('order');
           if(desErr)throw desErr;
           allDesigns=(desData||[]).map(d=>({
               id:d.id, name:d.name, categoryId:d.category_id, psdUrl:d.psd_url, 
@@ -597,6 +596,21 @@
       if(!adminList) return;
       adminList.innerHTML=allDesigns.map(d=>{
           const cat=allCategories.find(c=>c.id===d.categoryId);
+          
+          // ✅ FIX: Status ke mutabiq Badge aur Button change karein
+          let statusBadge = '';
+          let toggleBtnText = '';
+          if (d.status === 'published') {
+              statusBadge = '<span class="status-badge status-published">PUBLISHED</span>';
+              toggleBtnText = '👁️ Hide';
+          } else if (d.status === 'draft') {
+              statusBadge = '<span class="status-badge status-draft">HIDDEN</span>';
+              toggleBtnText = '👁️ Unhide';
+          } else {
+              statusBadge = '<span class="status-badge status-pending">PENDING</span>';
+              toggleBtnText = '👁️ Hide';
+          }
+
           let actionButtons = '';
           if (currentUserRole === 'super_admin') {
               actionButtons = `
@@ -604,7 +618,7 @@
                   <button class="btn action-btn" onclick="moveItem('designs','${d.id}','down')">⬇️</button>
                   <button class="btn action-btn" onclick="openBulkModal('${d.id}')" style="background:rgba(139,92,246,.2);color:#a78bfa;">📦 Bulk</button>
                   <button class="btn action-btn" onclick="copyDesignLink(event, '${d.id}')" title="Copy Share Link">🔗</button>
-                  <button class="btn action-btn" onclick="togglePublish('${d.id}')">👁️ Hide</button>
+                  <button class="btn action-btn" onclick="togglePublish('${d.id}')">${toggleBtnText}</button>
                   <button class="btn action-btn" onclick="openEditModal('design','${d.id}')">✏️ Edit</button>
                   <button class="btn danger action-btn" onclick="deleteDesign('${d.id}')">Delete</button>
               `;
@@ -617,7 +631,7 @@
           return `<div class="admin-item">
               <img src="${d.previewUrl}" loading="lazy" decoding="async">
               <div class="admin-item-info">
-                  <h4>${d.name} <span class="status-badge status-published">PUBLISHED</span></h4>
+                  <h4>${d.name} ${statusBadge}</h4>
                   <span>Cat: ${cat?cat.name:'Unknown'} | Downloads: <b>${d.downloads||0}</b></span>
               </div>
               <div class="admin-actions">${actionButtons}</div>
@@ -627,7 +641,10 @@
 
   function renderUser(){
       document.getElementById('category-bar').innerHTML=`<div class="cat-tab ${currentCategoryFilter==='all'?'active':''}" onclick="filterCategory('all')">All</div>`+allCategories.map(cat=>`<div class="cat-tab ${currentCategoryFilter===cat.id?'active':''}" onclick="filterCategory('${cat.id}')">${cat.name}</div>`).join('');
-      let filtered=allDesigns.filter(d=>d.status!=='draft' && d.status!=='pending');
+      
+      // ✅ User view par sirf 'published' designs show honge
+      let filtered=allDesigns.filter(d=>d.status === 'published');
+      
       if(currentCategoryFilter!=='all')filtered=filtered.filter(d=>d.categoryId===currentCategoryFilter);
       const grid=document.getElementById('design-grid');
       if(filtered.length===0){grid.innerHTML=`<div style="width:100%;text-align:center;padding:60px 20px;"><h3>No designs found</h3></div>`;return}
@@ -689,9 +706,8 @@
               cachedDesignId = design.id;
           }
           
-          // Wait for Photopea to be ready (Increased to 60 seconds)
           let waitCount = 0;
-          while(!isPhotopeaReady && waitCount < 120) { // 120 * 500ms = 60 seconds max
+          while(!isPhotopeaReady && waitCount < 120) { 
               await new Promise(r => setTimeout(r, 500));
               waitCount++;
           }
@@ -748,7 +764,6 @@
   }
 
   window.addEventListener('DOMContentLoaded',()=>{
-      // ✅ IFRAME LOADING START (No toasts)
       frame.src="https://www.photopea.com#%7B%7D";
       
       try{const savedTheme=localStorage.getItem('theme'),menuItem=document.getElementById('theme-menu-item');if(savedTheme==='light'){document.getElementById('app-wrapper').classList.add('light-theme');document.body.classList.add('light-theme');menuItem.innerHTML='🌙 Switch to Dark Theme'}else{document.getElementById('app-wrapper').classList.remove('light-theme');document.body.classList.remove('light-theme');menuItem.innerHTML='☀️ Switch to Light Theme'}}catch(e){}
@@ -760,7 +775,6 @@
       if(e.data==="done"){ 
           isPhotopeaReady=true; 
           console.log("✅ Photopea Engine is Ready!");
-          // Removed "System Ready" Toast as requested
           if(pendingGeneration){pendingGeneration();pendingGeneration=null} 
           return 
       }
@@ -818,7 +832,11 @@
   }
   
   async function moveItem(store,id,dir){let items=store==='designs'?[...allDesigns]:[...allCategories],idx=items.findIndex(i=>i.id===id);if(idx===-1)return;if(dir==='up'&&idx>0){let t=items[idx];items[idx]=items[idx-1];items[idx-1]=t}else if(dir==='down'&&idx<items.length-1){let t=items[idx];items[idx]=items[idx+1];items[idx+1]=t}else return;for(let i=0;i<items.length;i++){items[i].order=i+1;await supabaseClient.from(store).update({order:items[i].order}).eq('id',items[i].id)}loadAllData()}
-  async function togglePublish(id){const d=allDesigns.find(x=>x.id===id);await supabaseClient.from('designs').update({status:d.status==='draft'?'published':'draft'}).eq('id',id);loadAllData()}
+  async function togglePublish(id){
+      const d=allDesigns.find(x=>x.id===id);
+      await supabaseClient.from('designs').update({status:d.status==='draft'?'published':'draft'}).eq('id',id);
+      loadAllData()
+  }
   
   async function saveCategoryAdmin(){
       if(currentUserRole !== 'super_admin') return;
@@ -908,7 +926,6 @@
       const btn=document.getElementById(`btn-${cardId}`);
       btn.disabled=true;
       
-      // Simple text for Button
       btn.innerHTML = '<span class="btn-spinner"></span> Generating...';
       globalLoaderText.innerText = "Processing..."; 
       showPhotopea();
@@ -939,7 +956,6 @@
           processPSD();
       } else {
           pendingGeneration = processPSD;
-          // ✅ Timeout increased to 60 Seconds as requested
           setTimeout(() => {
               if(pendingGeneration) {
                   hidePhotopea();
@@ -981,7 +997,7 @@
                   pendingGeneration = null;
                   isBulkGenerating = false;
               }
-          }, 60000); // 60 Seconds
+          }, 60000);
       }
   }
   
