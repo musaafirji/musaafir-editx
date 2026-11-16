@@ -290,7 +290,8 @@
   const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg";
   
-  const CLOUDFLARE_PROXY_URL = "https://psd-proxy.musaafir-ji.workers.dev"; 
+  // ✅ YAHAN CUSTOM DOMAIN WALI NAYI PROXY LAGA DI HAI
+  const CLOUDFLARE_PROXY_URL = "https://proxy.musaafirji.cc"; 
   
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -389,7 +390,6 @@
           if(catErr)throw catErr;
           allCategories=catData||[];
           
-          // ✅ FIX: Admin ke liye saare designs fetch karein (Published + Draft)
           const{data:desData,error:desErr}=await supabaseClient.from('designs').select('*').order('order');
           if(desErr)throw desErr;
           allDesigns=(desData||[]).map(d=>({
@@ -597,7 +597,6 @@
       adminList.innerHTML=allDesigns.map(d=>{
           const cat=allCategories.find(c=>c.id===d.categoryId);
           
-          // ✅ FIX: Status ke mutabiq Badge aur Button change karein
           let statusBadge = '';
           let toggleBtnText = '';
           if (d.status === 'published') {
@@ -642,7 +641,6 @@
   function renderUser(){
       document.getElementById('category-bar').innerHTML=`<div class="cat-tab ${currentCategoryFilter==='all'?'active':''}" onclick="filterCategory('all')">All</div>`+allCategories.map(cat=>`<div class="cat-tab ${currentCategoryFilter===cat.id?'active':''}" onclick="filterCategory('${cat.id}')">${cat.name}</div>`).join('');
       
-      // ✅ User view par sirf 'published' designs show honge
       let filtered=allDesigns.filter(d=>d.status === 'published');
       
       if(currentCategoryFilter!=='all')filtered=filtered.filter(d=>d.categoryId===currentCategoryFilter);
