@@ -143,6 +143,56 @@
   .contact-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px}.contact-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:30px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;text-decoration:none;color:var(--text-main)}.contact-card svg{width:45px;height:45px;margin-bottom:15px}.contact-card h3{margin:0 0 5px;font-size:18px}.contact-card p{margin:0;color:var(--text-muted);font-size:13px}
   .about-section{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:30px;margin-bottom:25px}.about-heading{margin-top:0;font-size:20px;text-align:center;border-bottom:1px solid var(--card-border);padding-bottom:15px;position:relative}.about-heading span{font-family:'Audiowide',sans-serif;background:linear-gradient(270deg,#e52e71,#8b5cf6,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.about-heading::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:linear-gradient(90deg,#e52e71,#8b5cf6,#3b82f6)}.about-section p{color:var(--text-muted);line-height:1.8;font-size:15px;text-align:justify}
   .features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;margin-top:20px}.feature-item{background:var(--bg-color);padding:15px;border-radius:10px;border:1px solid var(--card-border)}.feature-item h4{margin:0 0 5px;color:var(--text-main);font-size:16px}.feature-item p{margin:0;color:var(--text-muted);font-size:13px}
+  
+  /* --- SUBMISSION GUIDELINES PAGE STYLES --- */
+  #guidelines-page {
+      display: none;
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+      animation: slideUpFade 0.4s ease forwards;
+  }
+  .guidelines-content {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 30px 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.15);
+  }
+  .guidelines-content p.intro {
+      color: var(--text-muted);
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 25px;
+      line-height: 1.6;
+  }
+  .rule-block {
+      background: var(--bg-color);
+      border: 1px solid var(--card-border);
+      padding: 18px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+  }
+  .rule-block h4 {
+      margin: 0 0 6px 0;
+      color: #e6e6e6;
+      font-size: 14px;
+      font-weight: 700;
+  }
+  body.light-theme .rule-block h4 {
+      color: #1f2937;
+  }
+  .rule-block p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.5;
+  }
+  .guidelines-actions {
+      margin-top: 25px;
+      text-align: center;
+  }
+  
   #admin-view{padding:30px 20px;display:none;max-width:900px;margin:auto}.tabs{display:flex;gap:10px;margin-bottom:25px;border-bottom:1px solid var(--card-border);padding-bottom:15px;overflow-x:auto}.tab{padding:10px 20px;border:1px solid var(--btn-border);border-radius:8px;background:var(--tab-bg);cursor:pointer;font-size:14px;font-weight:500;color:var(--text-main);white-space:nowrap}.tab.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
   .panel{display:none}.panel.active{display:block}.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:25px;margin-bottom:25px}.form-row{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}.form-row label{font-size:13px;color:var(--text-muted);font-weight:600;text-transform:uppercase}.form-row input,.form-row select{background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-main);padding:12px;border-radius:8px;font-size:14px;outline:none}
   .admin-item{display:flex;align-items:center;gap:15px;padding:15px;border:1px solid var(--card-border);background:var(--tab-bg);border-radius:10px;margin-bottom:12px;flex-wrap:wrap}.admin-item img{width:70px;height:70px;object-fit:cover;border-radius:8px}.admin-item-info{flex:1;min-width:150px}.admin-item-info h4{margin:0 0 5px;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}.admin-item-info span{font-size:12px;color:var(--text-muted)}.admin-actions{display:flex;gap:8px;flex-wrap:wrap}.status-badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold}.status-published{background:rgba(34,197,94,.2);color:#22c55e}.status-draft{background:rgba(245,158,11,.2);color:#f59e0b}.status-pending{background:rgba(59,130,246,.2);color:#3b82f6}
@@ -170,7 +220,7 @@
     <div class="dropdown-menu" id="dropdownMenu">
       <div class="menu-item" id="theme-menu-item" onclick="toggleTheme()">☀️ Switch to Light Theme</div>
       <div class="menu-item" id="admin-nav-item" onclick="handleAdminNav()">🔒 Admin Login</div>
-      <div class="menu-item" onclick="openPublicSubmitModal(); toggleMenu();">➕ Submit Design</div>
+      <div class="menu-item" onclick="openSubmitFlow(); toggleMenu();">➕ Submit Design</div>
       <div class="menu-item" onclick="openGuide(); toggleMenu();">📖 How to Use</div>
       <div class="menu-item" onclick="openContact(); toggleMenu();">📞 Contact Us</div>
       <div class="menu-item" onclick="openAbout(); toggleMenu();">ℹ️ About Us</div>
@@ -187,6 +237,33 @@
   <div id="about-page"><div class="page-header"><button class="back-btn" onclick="closeSubPage('about-page')">← Back</button><h2 style="margin:0;font-weight:600;font-size:20px;">About Us</h2></div>
     <div class="about-section"><h2 class="about-heading"><span>About Musaafir Editx</span></h2><p>Welcome to Musaafir Editx—your private studio for high-end typography and stunning name art. We turn ordinary text into extraordinary visual statements using advanced, Photoshop-grade layer styles. Whether you're designing for a special moment or just exploring creativity, we make professional-grade effects effortless.</p></div>
     <div class="about-section"><h2 class="about-heading"><span>Our Capabilities</span></h2><div class="features-grid"><div class="feature-item"><h4>✨ Premium Effects</h4><p>Powered by real Photopea layer styles for an authentic Photoshop look.</p></div><div class="feature-item"><h4>⚡ Instant Generation</h4><p>Just type your name and get a professionally designed image in seconds.</p></div><div class="feature-item"><h4>💎 High Quality</h4><p>Download your custom art in crystal clear, high-definition resolution.</p></div><div class="feature-item"><h4>📱 User Friendly</h4><p>Easy-to-use interface with no design skills required. Anyone can do it!</p></div></div></div>
+  </div>
+
+  <!-- GUIDELINES PAGE -->
+  <div id="guidelines-page">
+      <div class="guidelines-content">
+          <h2 class="about-heading" style="border-bottom:none; padding-bottom:5px;"><span>Submission Guidelines</span></h2>
+          <p class="intro">Apna design submit karne se pehlay baraye meharbani in hidayaat (guidelines) ko zaroor parh lijiye, taa ke aapka design baghair kisi rukawat ke approve ho sakay.</p>
+          
+          <div class="rule-block">
+              <h4>Exact Text Layer Name (NAME)</h4>
+              <p>PSD file ke andar jis text layer par aap text change karna chahte hain, uska exact naam NAME (bilkul capital letters mein) hona lazmi hai. Agar layer ka naam kuch aur hoga, to hamara automated tool text replace nahi kar sakega.</p>
+          </div>
+          
+          <div class="rule-block">
+              <h4>Custom Font File Attachment (.ttf / .otf)</h4>
+              <p>PSD design banate waqt jo font aapne use kiya hai, uski .ttf ya .otf font file sath lazmi upload karein. Font attach na karne ki soorat mein text aapke pasandida font style mein generate nahi ho sakega.</p>
+          </div>
+          
+          <div class="rule-block">
+              <h4>Clean Preview Image</h4>
+              <p>Preview image ke option mein apne final design ki ek wazeh aur attractive JPG/PNG image upload karein—yeh wahi tasveer hogi jo website ke front page par visitors ko show hogi.</p>
+          </div>
+          
+          <div class="guidelines-actions">
+              <button class="btn primary" style="width:100%; padding:14px; font-size:16px;" onclick="proceedToUpload()">I Understand</button>
+          </div>
+      </div>
   </div>
 
   <!-- ADMIN VIEW -->
@@ -290,7 +367,6 @@
   const SUPABASE_URL = "https://wacpvhatgnttejkysgqd.supabase.co";
   const SUPABASE_KEY = "sb_publishable_ik3CjSFxytZPpLVT1VCAYA_c2idSRTg";
   
-  // ✅ YAHAN CUSTOM DOMAIN WALI NAYI PROXY LAGA DI HAI
   const CLOUDFLARE_PROXY_URL = "https://proxy.musaafirji.cc"; 
   
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -300,6 +376,9 @@
   
   let currentUser = null;
   let currentUserRole = 'public'; 
+
+  // ✅ Yahan ek variable banaya jo page refresh hote hi false ho jayega
+  let hasSeenGuidelinesThisLoad = false;
 
   const frame=document.getElementById('photopea-frame'),globalLoader=document.getElementById('global-loader'),globalLoaderText=document.getElementById('global-loader-text');
   let isPhotopeaReady=false,pendingGeneration=null,generationTimeout=null;
@@ -474,6 +553,24 @@
       if (design) design.downloads = (design.downloads || 0) + 1;
       renderStats();
   }
+
+  // --- NEW: GUIDANCE FLOW LOGIC (Per Session) ---
+  function openSubmitFlow() {
+      // Ab ye sirf current session (page reload hone tak) yaad rakhega
+      if (hasSeenGuidelinesThisLoad) {
+          openPublicSubmitModal();
+      } else {
+          hideAllViews();
+          document.getElementById('guidelines-page').style.display = 'block';
+      }
+  }
+  
+  function proceedToUpload() {
+      hasSeenGuidelinesThisLoad = true; // Variable update kar diya
+      closeSubPage('guidelines-page');
+      openPublicSubmitModal();
+  }
+  // --------------------------------
 
   function openPublicSubmitModal() { 
       document.getElementById('pub-category').innerHTML = allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -1032,7 +1129,7 @@
   function openContact(){hideAllViews();document.getElementById('contact-page').style.display='block'}
   function openAbout(){hideAllViews();document.getElementById('about-page').style.display='block'}
   function closeSubPage(pageId){document.getElementById(pageId).style.display='none';document.getElementById('user-view').style.display='block'}
-  function hideAllViews(){document.getElementById('user-view').style.display='none';document.getElementById('contact-page').style.display='none';document.getElementById('about-page').style.display='none';document.getElementById('admin-view').style.display='none'}
+  function hideAllViews(){document.getElementById('user-view').style.display='none';document.getElementById('contact-page').style.display='none';document.getElementById('about-page').style.display='none';document.getElementById('admin-view').style.display='none';document.getElementById('guidelines-page').style.display='none'}
   function closeModal(e){if(e.target.classList.contains('modal-overlay'))e.target.classList.remove('active')}
 </script>
 </body>
